@@ -37,7 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName(fn () => Auth::user()?->branch?->name ?? 'Nama Aplikasi Default')
+            ->brandName(fn () => Auth::user()?->branch?->name ?? 'JB Printing Apps')
             ->colors([
                 'primary' => Color::Amber,
             ])
