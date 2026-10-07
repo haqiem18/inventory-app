@@ -19,11 +19,9 @@ class ListStockMutations extends ListRecords
                 ->icon('heroicon-o-printer')
                 ->color('gray')
                 ->action(function ($livewire) {
-                    // Akses langsung ke tabel melalui instance livewire
                     $table = $livewire->getTable();
                     $query = $table->getQuery();
 
-                    // Terapkan filter yang sedang aktif di tabel
                     $filters = $table->getFilters();
                     foreach ($filters as $filter) {
                         $filterState = $livewire->getTableFilterState($filter->getName());
@@ -32,7 +30,6 @@ class ListStockMutations extends ListRecords
                         }
                     }
 
-                    // Ambil ID-nya
                     $records = $query->get();
 
                     return redirect()->route('print.table', [
@@ -45,8 +42,8 @@ class ListStockMutations extends ListRecords
                 ->label('Tambah Barang Masuk')
                 ->modalHeading('Tambah Barang Masuk')
                 ->modalSubmitActionLabel('Simpan')
-                ->modalCreateAnotherActionLabel('Simpan & Buat Lagi')
-                ->modalCancelActionLabel('Batal'),
+                ->modalCancelActionLabel('Batal')
+                ->createAnother(false), // Menyembunyikan tombol "Create & create another"
         ];
     }
 }
