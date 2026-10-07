@@ -104,8 +104,8 @@ class StockMutationObserver
                 StockBatch::where('stock_mutation_id', $mutation->id)->delete();
             }
         } elseif ($type === 'OUT') {
-            // Stok pusat (origin) dibiarkan tetap (tidak dikurangi).
-            // Hanya tambahkan/kurangi stok di cabang tujuan (to_branch_id).
+            // Stok pusat dibiarkan tetap (tidak dikurangi).
+            // Hanya kelola penambahan/pengurangan di cabang tujuan (to_branch_id).
             if (!empty($to_branch_id)) {
                 if ($action === 'apply') {
                     $destStock = ProductStock::firstOrCreate(
