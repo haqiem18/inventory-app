@@ -10,7 +10,7 @@ use UnitEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction; // Pastikan EditAction diimpor
+use Filament\Actions\EditAction;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
@@ -83,7 +83,13 @@ class StockOutResource extends Resource
                     ->required()
                     ->searchable()
                     ->preload()
-                    ->live(),
+                    ->live()
+                    // Otomatis isi jika role-nya admin_cabang
+                    ->default(fn () => Auth::user()->role === 'admin_cabang' ? Auth::user()->branch_id : null)
+                    // Kunci pilihan jika role-nya admin_cabang
+                    ->disabled(fn () => Auth::user()->role === 'admin_cabang')
+                    // Memastikan data tetap tersimpan meski field dalam kondisi disabled
+                    ->dehydrated(true),
 
                 Select::make('to_branch_id')
                     ->label('Ke Cabang (Tujuan)')
@@ -267,7 +273,6 @@ class StockOutResource extends Resource
                     }),
             ])
             ->recordActions([
-                // Tombol Edit di tabel (bisa dibatasi hanya untuk super_admin jika diperlukan)
                 EditAction::make()
                     ->visible(fn(): bool => Auth::user()->role === 'super_admin'),
 
