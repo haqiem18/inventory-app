@@ -30,13 +30,6 @@ class ProductForm
                     ->preload()
                     ->required(),
 
-                Select::make('brand_id')
-                    ->label('Merk')
-                    ->relationship('brand', 'name')
-                    ->searchable()
-                    ->preload()
-                    ->required(),
-
                 Select::make('unit_id')
                     ->label('Satuan')
                     ->relationship('unit', 'name')

@@ -30,9 +30,6 @@ class ProductsTable
                 TextColumn::make('type.name')
                     ->label('Jenis'),
 
-                TextColumn::make('brand.name')
-                    ->label('Merk'),
-
                 TextColumn::make('purchase_price')
                     ->label('Harga Beli')
                     ->money('IDR')
