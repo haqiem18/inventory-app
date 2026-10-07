@@ -13,6 +13,11 @@ class StockMutationObserver
 
     public function creating(StockMutation $mutation): void
     {
+        // Pastikan status otomatis jadi 'pending' jika kosong/null
+        if (empty($mutation->status)) {
+            $mutation->status = 'pending';
+        }
+
         $mutation->subtotal = $mutation->quantity * $mutation->purchase_price;
         if ($mutation->payment_status === 'lunas') {
             $mutation->paid_amount = $mutation->subtotal;
