@@ -8,6 +8,16 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateStockMutation extends CreateRecord
 {
     protected static string $resource = StockMutationResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        // Otomatis set status ke PENDING saat data disimpan
+        $data['status'] = 'PENDING';
+        $data['type'] = 'Masuk';
+
+        return $data;
+    }
+
     protected function getRedirectUrl(): string
     {
         // Mengarahkan kembali ke halaman index/tabel setelah berhasil simpan
