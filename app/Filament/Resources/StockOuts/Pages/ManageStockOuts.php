@@ -41,7 +41,11 @@ class ManageStockOuts extends ManageRecords
                 }),
                 
             Actions\CreateAction::make()
-                ->label('Tambah Stok Keluar') // Diubah ke bahasa Indonesia
+                ->label('Tambah Stok Keluar')
+                ->modalHeading('Tambah Stok Keluar')
+                ->modalSubmitActionLabel('Simpan')
+                ->modalCancelActionLabel('Batal')
+                ->createAnother(false)
                 ->mutateFormDataUsing(function (array $data): array {
                     // Semua transaksi set ke PENDING dulu agar stok belum dipotong
                     $data['status'] = 'PENDING';
