@@ -58,8 +58,8 @@ class StockMutationObserver
             return;
         }
 
-        // 3. Jika mutasi sudah RECEIVED lalu data diubah (quantity/product)
-        if ($mutation->status === 'RECEIVED' && $mutation->wasChanged(['type', 'quantity', 'product_id', 'branch_id'])) {
+        // 3. Jika mutasi sudah RECEIVED lalu data diubah (quantity/product/to_branch_id)
+        if ($mutation->status === 'RECEIVED' && $mutation->wasChanged(['type', 'quantity', 'product_id', 'branch_id', 'to_branch_id'])) {
             self::$processing = true;
             DB::transaction(function () use ($mutation) {
                 $this->processStock($mutation, 'revert');
@@ -77,12 +77,13 @@ class StockMutationObserver
 
     private function processStock(StockMutation $mutation, $action)
     {
-        $isRevert = ($action === 'revert');
-        $product_id = $isRevert ? $mutation->getOriginal('product_id') : $mutation->product_id;
-        $branch_id  = $isRevert ? $mutation->getOriginal('branch_id') : $mutation->branch_id;
-        $quantity   = $isRevert ? $mutation->getOriginal('quantity') : $mutation->quantity;
-        $type       = $isRevert ? $mutation->getOriginal('type') : $mutation->type;
-        $multiplier = $isRevert ? -1 : 1;
+        $isRevert     = ($action === 'revert');
+        $product_id   = $isRevert ? $mutation->getOriginal('product_id') : $mutation->product_id;
+        $branch_id    = $isRevert ? $mutation->getOriginal('branch_id') : $mutation->branch_id;
+        $to_branch_id = $isRevert ? $mutation->getOriginal('to_branch_id') : $mutation->to_branch_id;
+        $quantity     = $isRevert ? $mutation->getOriginal('quantity') : $mutation->quantity;
+        $type         = $isRevert ? $mutation->getOriginal('type') : $mutation->type;
+        $multiplier   = $isRevert ? -1 : 1;
 
         if (empty($product_id) || empty($branch_id)) return;
 
@@ -103,11 +104,27 @@ class StockMutationObserver
                 StockBatch::where('stock_mutation_id', $mutation->id)->delete();
             }
         } elseif ($type === 'OUT') {
-            $origin = ProductStock::where('product_id', $product_id)->where('branch_id', $branch_id)->first();
-            if ($origin) {
-                $origin->increment('stock', ($quantity * $multiplier) * -1);
+            // Stok pusat (origin) dibiarkan tetap (tidak dikurangi).
+            // Hanya tambahkan/kurangi stok di cabang tujuan (to_branch_id).
+            if (!empty($to_branch_id)) {
+                if ($action === 'apply') {
+                    $destStock = ProductStock::firstOrCreate(
+                        [
+                            'product_id' => $product_id,
+                            'branch_id'  => $to_branch_id
+                        ],
+                        ['stock' => 0]
+                    );
+                    $destStock->increment('stock', $quantity);
+                } else { // revert / void
+                    $destStock = ProductStock::where('product_id', $product_id)
+                        ->where('branch_id', $to_branch_id)
+                        ->first();
+                    if ($destStock) {
+                        $destStock->decrement('stock', $quantity);
+                    }
+                }
             }
-            $this->processFifo($product_id, $quantity * $multiplier);
         }
     }
 
