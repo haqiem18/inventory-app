@@ -28,11 +28,12 @@ class BrandResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->role === 'super_admin';
+        return false;
     }
+
     public static function canViewAny(): bool
     {
-        return Auth::user()->role === 'super_admin';
+        return false;
     }
     public static function form(Schema $schema): Schema
     {
