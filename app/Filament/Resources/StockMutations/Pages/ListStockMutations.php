@@ -45,6 +45,7 @@ class ListStockMutations extends ListRecords
                 ->label('Tambah Barang Masuk')
                 ->modalHeading('Tambah Barang Masuk')
                 ->modalSubmitActionLabel('Simpan')
+                ->modalCreateAnotherActionLabel('Simpan & Buat Lagi')
                 ->modalCancelActionLabel('Batal'),
         ];
     }
