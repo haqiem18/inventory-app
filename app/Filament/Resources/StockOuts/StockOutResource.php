@@ -202,7 +202,11 @@ class StockOutResource extends Resource
                     ->label('Qty')
                     ->alignCenter()
                     ->sortable()
-                    ->summarize(Sum::make()->label('Total Qty')),
+                    ->summarize(
+                        Sum::make()
+                            ->label('Total Qty')
+                            ->using(fn ($query) => $query->sum('quantity'))
+                    ),
 
                 TextColumn::make('purchase_price')
                     ->label('Harga Beli')
@@ -220,7 +224,12 @@ class StockOutResource extends Resource
                     ->label('Total Harga')
                     ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.'))
                     ->sortable()
-                    ->summarize(Sum::make()->label('Grand Total')->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.')))
+                    ->summarize(
+                        Sum::make()
+                            ->label('Grand Total')
+                            ->using(fn ($query) => $query->sum('subtotal'))
+                            ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.'))
+                    )
                     ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
                 TextColumn::make('salesPerson.name')->label('Sales')->sortable(),
             ])
