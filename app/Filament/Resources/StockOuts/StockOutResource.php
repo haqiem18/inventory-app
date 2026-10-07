@@ -36,7 +36,7 @@ class StockOutResource extends Resource
     protected static ?string $recordTitleAttribute = 'reference_number';
     protected static ?string $pluralModelLabel = 'Barang Keluar';
     protected static ?string $modelLabel = 'Barang Keluar';
-    
+
     public static function getEloquentQuery(): Builder
     {
         $query = \App\Models\StockMutation::query();
@@ -152,7 +152,7 @@ class StockOutResource extends Resource
                     ->prefix('Rp')
                     ->visible(fn(): bool => Auth::user()->role === 'super_admin'),
 
-                TextInput::make('price') 
+                TextInput::make('price')
                     ->label('Harga Jual')
                     ->required()
                     ->numeric()
@@ -323,8 +323,6 @@ class StockOutResource extends Resource
     {
         return [
             'index' => \App\Filament\Resources\StockOuts\Pages\ManageStockOuts::route('/'),
-            // Tambahkan rute edit di sini agar halaman edit aktif
-            'edit' => \App\Filament\Resources\StockOuts\Pages\EditStockOut::route('/{record}/edit'),
         ];
     }
 }
