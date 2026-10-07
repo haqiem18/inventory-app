@@ -84,11 +84,8 @@ class StockOutResource extends Resource
                     ->searchable()
                     ->preload()
                     ->live()
-                    // Otomatis isi jika role-nya admin_cabang
                     ->default(fn () => Auth::user()->role === 'admin_cabang' ? Auth::user()->branch_id : null)
-                    // Kunci pilihan jika role-nya admin_cabang
                     ->disabled(fn () => Auth::user()->role === 'admin_cabang')
-                    // Memastikan data tetap tersimpan meski field dalam kondisi disabled
                     ->dehydrated(true),
 
                 Select::make('to_branch_id')
@@ -127,7 +124,6 @@ class StockOutResource extends Resource
 
                 Select::make('product_id')
                     ->label('Nama Barang')
-                    ->relationship('product', 'name')
                     ->searchable()
                     ->required()
                     ->preload()
@@ -150,7 +146,6 @@ class StockOutResource extends Resource
                     ->required()
                     ->minValue(1),
 
-                // Harga Beli & Jual hanya muncul/bisa diisi oleh super_admin
                 TextInput::make('purchase_price')
                     ->label('Harga Beli')
                     ->required()
