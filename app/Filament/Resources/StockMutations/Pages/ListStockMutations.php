@@ -40,7 +40,8 @@ class ListStockMutations extends ListRecords
                         'ids' => $records->pluck('id')->toArray()
                     ]);
                 }),
-            CreateAction::make(),
+            CreateAction::make()
+            ->label('Tambah Cabang'),
         ];
     }
 }

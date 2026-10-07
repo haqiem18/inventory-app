@@ -39,7 +39,9 @@ class ManageStockOuts extends ManageRecords
                         'ids' => $records->pluck('id')->toArray()
                     ]);
                 }),
+                
             Actions\CreateAction::make()
+                ->label('Tambah Stok Keluar') // Diubah ke bahasa Indonesia
                 ->mutateFormDataUsing(function (array $data): array {
                     // Semua transaksi set ke PENDING dulu agar stok belum dipotong
                     $data['status'] = 'PENDING';
