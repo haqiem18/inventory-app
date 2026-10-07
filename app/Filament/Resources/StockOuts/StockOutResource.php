@@ -9,9 +9,8 @@ use BackedEnum;
 use UnitEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
+use Filament\Actions\EditAction; // Pastikan EditAction diimpor
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
@@ -29,7 +28,6 @@ use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 
-
 class StockOutResource extends Resource
 {
     protected static ?string $model = StockMutation::class;
@@ -45,13 +43,9 @@ class StockOutResource extends Resource
 
         if (auth()->check() && auth()->user()->role === 'admin_cabang') {
             $branchId = auth()->user()->branch_id;
-
-            // Admin cabang di menu Barang Keluar HANYA melihat barang yang murni keluar 
-            // dari cabangnya sendiri (branch_id = $branchId), tanpa tercampur mutasi masuk dari pusat.
             $query->where('branch_id', $branchId);
         }
 
-        // Pastikan tetap memfilter hanya yang tipe 'OUT'
         $query->where('type', 'OUT');
 
         return $query;
@@ -150,18 +144,20 @@ class StockOutResource extends Resource
                     ->required()
                     ->minValue(1),
 
+                // Harga Beli & Jual hanya muncul/bisa diisi oleh super_admin
                 TextInput::make('purchase_price')
                     ->label('Harga Beli')
                     ->required()
                     ->numeric()
-                    ->prefix('Rp'),
+                    ->prefix('Rp')
+                    ->visible(fn(): bool => Auth::user()->role === 'super_admin'),
 
-                TextInput::make('price') // Ini adalah Harga Jual
+                TextInput::make('price') 
                     ->label('Harga Jual')
                     ->required()
                     ->numeric()
-                    ->prefix('Rp'),
-
+                    ->prefix('Rp')
+                    ->visible(fn(): bool => Auth::user()->role === 'super_admin'),
             ]);
     }
 
@@ -270,8 +266,11 @@ class StockOutResource extends Resource
                         return $indicators;
                     }),
             ])
-
             ->recordActions([
+                // Tombol Edit di tabel (bisa dibatasi hanya untuk super_admin jika diperlukan)
+                EditAction::make()
+                    ->visible(fn(): bool => Auth::user()->role === 'super_admin'),
+
                 Action::make('cetak_invoice')
                     ->label('Cetak')
                     ->icon('heroicon-o-printer')
@@ -324,6 +323,8 @@ class StockOutResource extends Resource
     {
         return [
             'index' => \App\Filament\Resources\StockOuts\Pages\ManageStockOuts::route('/'),
+            // Tambahkan rute edit di sini agar halaman edit aktif
+            'edit' => \App\Filament\Resources\StockOuts\Pages\EditStockOut::route('/{record}/edit'),
         ];
     }
 }
