@@ -9,7 +9,11 @@ use Filament\Actions\Action;
 class CreateBranch extends CreateRecord
 {
     protected static string $resource = BranchResource::class;
-
+    protected function getRedirectUrl(): string
+    {
+        // Mengarahkan kembali ke halaman index/tabel setelah berhasil simpan
+        return $this->getResource()::getUrl('index');
+    }
     public function getTitle(): string
     {
         return 'Tambah Cabang';
@@ -20,10 +24,10 @@ class CreateBranch extends CreateRecord
         return [
             $this->getCreateFormAction()
                 ->label('Simpan'),
-                
+
             $this->getCreateAnotherFormAction()
                 ->label('Simpan & Buat Lagi'),
-                
+
             $this->getCancelFormAction()
                 ->label('Batal'),
         ];
