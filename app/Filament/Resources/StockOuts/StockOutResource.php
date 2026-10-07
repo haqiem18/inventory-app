@@ -46,13 +46,9 @@ class StockOutResource extends Resource
         if (auth()->check() && auth()->user()->role === 'admin_cabang') {
             $branchId = auth()->user()->branch_id;
 
-            // Admin cabang bisa melihat jika:
-            // 1. Mereka yang mengeluarkan barang (branch_id)
-            // 2. ATAU mereka yang menerima barang (to_branch_id)
-            $query->where(function ($subQuery) use ($branchId) {
-                $subQuery->where('branch_id', $branchId)
-                    ->orWhere('to_branch_id', $branchId);
-            });
+            // Admin cabang di menu Barang Keluar HANYA melihat barang yang murni keluar 
+            // dari cabangnya sendiri (branch_id = $branchId), tanpa tercampur mutasi masuk dari pusat.
+            $query->where('branch_id', $branchId);
         }
 
         // Pastikan tetap memfilter hanya yang tipe 'OUT'
@@ -196,7 +192,7 @@ class StockOutResource extends Resource
                         'mutasi' => 'Mutasi Cabang',
                         'penjualan' => 'Penjualan',
                         default => ucfirst($state),
-                    }), // Di dalam method table() -> columns()
+                    }),
                 BadgeColumn::make('status')
                     ->label('Status')
                     ->colors([
@@ -281,7 +277,6 @@ class StockOutResource extends Resource
                     ->icon('heroicon-o-printer')
                     ->color('info')
                     ->visible(fn(): bool => auth()->user()->role === 'super_admin')
-                    // Pastikan key-nya ('reference_number') sama dengan yang ada di route
                     ->url(fn($record) => route('invoice.print', ['reference_number' => $record->reference_number]))
                     ->openUrlInNewTab(),
 
@@ -292,8 +287,6 @@ class StockOutResource extends Resource
                     ->requiresConfirmation()
                     ->modalDescription('Apakah Anda yakin ingin terima data ini?')
                     ->action(function ($record) {
-                        // CUKUP LAKUKAN INI SAJA:
-                        // Update status akan memicu Observer secara otomatis
                         $record->update(['status' => 'RECEIVED']);
 
                         \Filament\Notifications\Notification::make()
@@ -306,14 +299,10 @@ class StockOutResource extends Resource
                     ->label('Void')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    // Tombol hanya muncul jika statusnya RECEIVED (atau sesuai kebijakan Anda)
-                    // Jika ingin bisa VOID yang statusnya PENDING juga, ubah kondisinya
                     ->visible(fn($record) => $record->status === 'RECEIVED')
                     ->requiresConfirmation()
                     ->modalDescription('Apakah Anda yakin ingin membatalkan transaksi ini? Stok akan dikembalikan.')
                     ->action(function ($record, $livewire) {
-                        // Observer akan otomatis menjalankan processStock('revert') 
-                        // karena kita mengubah status ke VOID
                         $record->update(['status' => 'VOID']);
 
                         \Filament\Notifications\Notification::make()
@@ -335,8 +324,6 @@ class StockOutResource extends Resource
     {
         return [
             'index' => \App\Filament\Resources\StockOuts\Pages\ManageStockOuts::route('/'),
-            //'create' => \App\Filament\Resources\StockOuts\Pages\CreateTerimaBarang::route('/create'),
-            //'edit' => \App\Filament\Resources\TerimaBarangs\Pages\EditTerimaBarang::route('/{record}/edit'),
         ];
     }
 }
