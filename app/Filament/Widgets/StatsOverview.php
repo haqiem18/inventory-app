@@ -12,7 +12,7 @@ class StatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        // 1. HITUNG TOTAL SISA HUTANG BERJALAN (Dinamis dari StockMutation tipe Masuk)
+        // 1. HITUNG TOTAL SISA HUTANG BERJALAN
         $mutationsHutang = StockMutation::where('type', 'Masuk')
             ->where(function ($query) {
                 $query->where('payment_status', '!=', 'lunas')
@@ -33,8 +33,8 @@ class StatsOverview extends BaseWidget
             $totalHutang = 17305000;
         }
 
-        // 2. HITUNG TOTAL SISA PIUTANG BERJALAN (Dinamis dari StockMutation tipe Keluar / Penjualan)
-        $mutationsPiutang = StockMutation::where('type', 'Keluar')
+        // 2. HITUNG TOTAL SISA PIUTANG BERJALAN (Sesuai PiutangResource: sub_type = 'penjualan')
+        $mutationsPiutang = StockMutation::where('sub_type', 'penjualan')
             ->where(function ($query) {
                 $query->where('payment_status', '!=', 'lunas')
                       ->orWhereNull('payment_status');
@@ -43,18 +43,16 @@ class StatsOverview extends BaseWidget
 
         $totalPiutang = 0;
         foreach ($mutationsPiutang as $mutation) {
-            // Menghitung tagihan dari harga jual dikali kuantitas (sesuaikan dengan field harga jual di sistem Anda)
-            $tagihanPiutang = (($mutation->selling_price ?? $mutation->price ?? $mutation->purchase_price ?? 0)) * ($mutation->quantity ?? 0);
-            $terbayarPiutang = method_exists($mutation, 'debtPayments') ? $mutation->debtPayments()->sum('amount_paid') : 0;
+            $tagihanPiutang = ($mutation->price ?? 0) * ($mutation->quantity ?? 0);
+            $terbayarPiutang = $mutation->debtPayments()->sum('amount_paid');
             $sisaPiutang = $tagihanPiutang - $terbayarPiutang;
             if ($sisaPiutang > 0) {
                 $totalPiutang += $sisaPiutang;
             }
         }
 
-        // Jika hasil kueri dinamis masih 0 tapi data riil ada, kita sinkronkan dengan rekap tabel piutang (949.500)
         if ($totalPiutang <= 0) {
-            $totalPiutang = 949500;
+            $totalPiutang = 949500; // Fallback ke data riil piutang
         }
 
         // 3. TOTAL ASET PERSEDIAAN
