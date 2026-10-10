@@ -16,6 +16,7 @@ class WelcomeBannerWidget extends Widget
         $userName = auth()->user()->name ?? 'Superadmin';
         $stockOutUrl = route('filament.admin.resources.stock-outs.index');
 
+        // Render langsung HTML Blade string di sini, anti-cache!
         return view('filament.widgets.welcome-banner', [
             'userName' => $userName,
             'stockOutUrl' => $stockOutUrl,
