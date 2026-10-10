@@ -10,20 +10,15 @@ class WelcomeBannerWidget extends Widget
     
     protected int | string | array $columnSpan = 'full';
 
-    protected function getViewData(): array
-    {
-        return [
-            'userName' => auth()->user()->name ?? 'Superadmin',
-            'stockOutUrl' => route('filament.admin.resources.stock-outs.index'),
-        ];
-    }
-
-    // Menggunakan view bawaan section filament agar aman dari cache file terpisah
+    // Render langsung HTML-nya di sini agar tidak ada masalah cache file view
     public function render(): \Illuminate\Contracts\View\View
     {
+        $userName = auth()->user()->name ?? 'Superadmin';
+        $stockOutUrl = route('filament.admin.resources.stock-outs.index');
+
         return view('filament.widgets.welcome-banner', [
-            'userName' => auth()->user()->name ?? 'Superadmin',
-            'stockOutUrl' => route('filament.admin.resources.stock-outs.index'),
+            'userName' => $userName,
+            'stockOutUrl' => $stockOutUrl,
         ]);
     }
 }
