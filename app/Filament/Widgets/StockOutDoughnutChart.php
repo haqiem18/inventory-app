@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Auth;
 
 class StockOutDoughnutChart extends ChartWidget
 {
-    protected static ?string $heading = 'Persentase Keperluan Barang Keluar';
-    protected static ?int $sort = 4;
+    protected  ?string $heading = 'Persentase Keperluan Barang Keluar';
+    protected  ?int $sort = 4;
 
     protected function getData(): array
     {

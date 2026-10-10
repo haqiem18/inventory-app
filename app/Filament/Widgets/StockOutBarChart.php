@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Auth;
 
 class StockOutBarChart extends ChartWidget
 {
-    protected static ?string $heading = 'Barang Keluar (7 Hari Terakhir)';
-    protected static ?int $sort = 3;
+    protected  ?string $heading = 'Barang Keluar (7 Hari Terakhir)';
+    protected  ?int $sort = 3;
 
     protected function getData(): array
     {
