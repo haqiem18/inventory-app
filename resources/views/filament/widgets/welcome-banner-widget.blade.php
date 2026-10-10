@@ -1,7 +1,7 @@
 <x-filament-widgets::widget>
     <x-filament::section>
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-2">
-            <div>
+        <div class="flex items-center justify-between w-full gap-4 py-1">
+            <div class="flex flex-col">
                 <h2 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-white">
                     Selamat Datang, {{ ucwords(auth()->user()->name ?? 'Superadmin') }}! 👋
                 </h2>
