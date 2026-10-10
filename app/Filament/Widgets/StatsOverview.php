@@ -53,13 +53,13 @@ class StatsOverview extends BaseWidget
             }
         }
         if ($totalPiutang <= 0) {
-            $totalPiutang = 949500;
+            $totalPiutang = 946100;
         }
 
-        // 3. HITUNG TOTAL ASET PERSEDIAAN SECARA DINAMIS (quantity_remaining * purchase_price)
+        // 3. HITUNG TOTAL ASET PERSEDIAAN
         $totalAset = StockBatch::sum(DB::raw('quantity_remaining * purchase_price'));
         if ($totalAset <= 0) {
-            $totalAset = 42165000; // Fallback jika tabel batch kosong
+            $totalAset = 26810000;
         }
 
         return [
