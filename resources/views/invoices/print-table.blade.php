@@ -8,7 +8,7 @@
         <h3 style="margin: 5px 0;">Laporan Piutang</h3>
     @elseif(request('type') == 'hutang')
         <h3 style="margin: 5px 0;">Laporan Hutang</h3>
-    @elseif(request('type') == 'stock-in' || request('type') == 'barang-masuk')
+    @elseif(request('type') == 'stock-in' || request('type') == 'IN)
         <h3 style="margin: 5px 0;">Laporan Data Barang Masuk</h3>
     @else
         <h3 style="margin: 5px 0;">Laporan Data Barang Keluar</h3>
@@ -40,7 +40,7 @@
                 <th style="padding: 8px;">Terbayar</th>
                 <th style="padding: 8px;">Sisa Hutang</th>
                 <th style="padding: 8px;">Status</th>
-            @elseif(request('type') == 'stock-in' || request('type') == 'barang-masuk')
+            @elseif(request('type') == 'stock-in' || request('type') == 'IN')
                 <th style="padding: 8px;">No. Referensi</th>
                 <th style="padding: 8px;">Tanggal</th>
                 <th style="padding: 8px;">Barang</th>
