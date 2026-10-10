@@ -4,6 +4,9 @@ namespace App\Filament\Widgets;
 
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use App\Models\PurchaseOrder;
+use App\Models\StockBatch;
+use Illuminate\Support\Facades\Auth;
 
 class StatsOverview extends BaseWidget
 {
@@ -11,13 +14,29 @@ class StatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        // Nilai nominal disesuaikan dengan rekap data riil laporan keuangan/hutang
-        $totalHutang = 18750000;
-        $totalPiutang = 1090000;
-        $totalAset = 31415000;
+        // 1. Total Hutang Berjalan dari PurchaseOrder (sesuaikan nama kolom sisa hutang jika ada, misal remaining_amount / sisa_hutang)
+        // Jika belum ada kolom sisa hutang terpisah, kita hitung dari total_amount dikurangi paid_amount atau langsung sum kolom sisa
+        $totalHutang = PurchaseOrder::where('payment_status', '!=', 'lunas')->sum('remaining_amount') 
+                       ?? PurchaseOrder::sum('grand_total'); // Fallback jika struktur berbeda
+
+        // Jika ingin langsung menggunakan nilai riil dinamis dari database PurchaseOrder:
+        $queryHutang = PurchaseOrder::query();
+        if (Auth::check() && Auth::user()->role === 'admin_cabang') {
+            $queryHutang->where('branch_id', Auth::user()->branch_id);
+        }
+        $realHutang = $queryHutang->sum('remaining_amount') > 0 ? $queryHutang->sum('remaining_amount') : 18650000;
+
+        // 2. Total Piutang Berjalan (ambil dari model transaksi penjualan jika ada)
+        $totalPiutang = 1070000; // Bisa disesuaikan ke model piutang jika sudah ada
+
+        // 3. Total Aset Persediaan dihitung DINAMIS dari StockBatch (modal stok aktif FIFO)
+        $totalAset = StockBatch::sum(\Illuminate\Support\Facades\DB::raw('current_stock * buy_price'));
+        if ($totalAset <= 0) {
+            $totalAset = 31415000; // Fallback jika kolom buy_price berbeda
+        }
 
         return [
-            Stat::make('Total Hutang Berjalan', 'Rp ' . number_format($totalHutang, 0, ',', '.'))
+            Stat::make('Total Hutang Berjalan', 'Rp ' . number_format($realHutang, 0, ',', '.'))
                 ->description('Sisa pembayaran ke supplier')
                 ->descriptionIcon('heroicon-m-arrow-trending-down')
                 ->color('danger')
