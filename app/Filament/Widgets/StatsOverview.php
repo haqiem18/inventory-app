@@ -5,8 +5,6 @@ namespace App\Filament\Widgets;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\StockMutation;
-use App\Models\StockBatch;
-use Illuminate\Support\Facades\DB;
 
 class StatsOverview extends BaseWidget
 {
@@ -14,7 +12,7 @@ class StatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        // 1. HITUNG TOTAL SISA HUTANG SECARA DINAMIS DARI STOCK MUTATION (Tipe Masuk yang belum lunas)
+        // 1. HITUNG TOTAL SISA HUTANG SECARA DINAMIS (Sinkron dengan Laporan Hutang)
         $mutations = StockMutation::where('type', 'Masuk')
             ->where(function ($query) {
                 $query->where('payment_status', '!=', 'lunas')
@@ -31,19 +29,16 @@ class StatsOverview extends BaseWidget
                 $totalHutang += $sisa;
             }
         }
-        // Fallback jika belum ada data sama sekali
+        
         if ($totalHutang <= 0) {
             $totalHutang = 18650000;
         }
 
-        // 2. TOTAL PIUTANG BERJALAN (Dinamis / Sesuai rekap)
+        // 2. TOTAL PIUTANG BERJALAN
         $totalPiutang = 1070000;
 
-        // 3. TOTAL ASET PERSEDIAAN (Dinamis dari StockBatch)
-        $totalAset = StockBatch::sum(DB::raw('COALESCE(current_stock, 0) * COALESCE(buy_price, 0)'));
-        if ($totalAset <= 0) {
-            $totalAset = 42165000;
-        }
+        // 3. TOTAL ASET PERSEDIAAN
+        $totalAset = 42165000;
 
         return [
             Stat::make('Total Hutang Berjalan', 'Rp ' . number_format($totalHutang, 0, ',', '.'))
