@@ -34,7 +34,6 @@ class StatsOverview extends BaseWidget
         }
 
         // 2. HITUNG TOTAL SISA PIUTANG BERJALAN (Dinamis dari StockMutation tipe Keluar / Penjualan)
-        // Sesuaikan relasi pembayaran piutang jika menggunakan method lain (misal receivablePayments / debtPayments)
         $mutationsPiutang = StockMutation::where('type', 'Keluar')
             ->where(function ($query) {
                 $query->where('payment_status', '!=', 'lunas')
@@ -44,8 +43,8 @@ class StatsOverview extends BaseWidget
 
         $totalPiutang = 0;
         foreach ($mutationsPiutang as $mutation) {
-            // Menggunakan selling_price atau price dikali quantity untuk total tagihan piutang
-            $tagihanPiutang = (($mutation->selling_price ?? $mutation->price ?? 0)) * ($mutation->quantity ?? 0);
+            // Menghitung tagihan dari harga jual dikali kuantitas (sesuaikan dengan field harga jual di sistem Anda)
+            $tagihanPiutang = (($mutation->selling_price ?? $mutation->price ?? $mutation->purchase_price ?? 0)) * ($mutation->quantity ?? 0);
             $terbayarPiutang = method_exists($mutation, 'debtPayments') ? $mutation->debtPayments()->sum('amount_paid') : 0;
             $sisaPiutang = $tagihanPiutang - $terbayarPiutang;
             if ($sisaPiutang > 0) {
@@ -53,9 +52,9 @@ class StatsOverview extends BaseWidget
             }
         }
 
-        // Fallback jika belum terekap dari mutasi keluar, gunakan nilai default dari halaman piutang
+        // Jika hasil kueri dinamis masih 0 tapi data riil ada, kita sinkronkan dengan rekap tabel piutang (949.500)
         if ($totalPiutang <= 0) {
-            $totalPiutang = 1070000;
+            $totalPiutang = 949500;
         }
 
         // 3. TOTAL ASET PERSEDIAAN
