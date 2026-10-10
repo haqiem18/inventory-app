@@ -1,7 +1,7 @@
 <x-filament-widgets::widget>
     <x-filament::section>
-        <div class="flex items-center justify-between w-full gap-4 py-1">
-            <div class="flex flex-col">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 1rem;">
+            <div>
                 <h2 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-white">
                     Selamat Datang, {{ ucwords(auth()->user()->name ?? 'Superadmin') }}! 👋
                 </h2>
@@ -9,7 +9,7 @@
                     Sistem Inventori & Keuangan DC JB Printing siap digunakan hari ini.
                 </p>
             </div>
-            <div class="flex items-center shrink-0">
+            <div style="flex-shrink: 0;">
                 <a href="{{ route('filament.admin.resources.stock-outs.index') }}" class="inline-flex items-center justify-center gap-1.5 py-2.5 px-4 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-500 transition rounded-xl shadow-md">
                     <span class="text-base font-bold">+</span> Barang Keluar
                 </a>
