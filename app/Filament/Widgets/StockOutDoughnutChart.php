@@ -10,7 +10,7 @@ class StockOutDoughnutChart extends ChartWidget
 {
     protected static ?int $sort = 4;
 
-    protected function getHeading(): ?string
+    public function getHeading(): ?string
     {
         return 'Persentase Keperluan Barang Keluar';
     }

@@ -11,7 +11,7 @@ class StockOutBarChart extends ChartWidget
 {
     protected static ?int $sort = 3;
 
-    protected function getHeading(): ?string
+    public function getHeading(): ?string
     {
         return 'Barang Keluar (7 Hari Terakhir)';
     }
