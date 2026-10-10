@@ -4,7 +4,7 @@
 <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;">
     <h2 style="margin: 0;">DC JB PRINTING</h2>
     
-    @if(request('type') == 'piutang')
+    @if(request('type') == 'IN')
         <h3 style="margin: 5px 0;">Laporan Piutang</h3>
     @elseif(request('type') == 'hutang')
         <h3 style="margin: 5px 0;">Laporan Hutang</h3>
@@ -21,7 +21,7 @@
 <table border="1" style="width: 100%; border-collapse: collapse; font-size: 11px;">
     <thead>
         <tr style="background-color: #333; color: white;">
-            @if(request('type') == 'piutang')
+            @if(request('type') == 'IN')
                 <th style="padding: 8px;">No. Nota</th>
                 <th style="padding: 8px;">Tanggal</th>
                 <th style="padding: 8px;">Customer</th>
