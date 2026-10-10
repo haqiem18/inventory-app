@@ -40,7 +40,7 @@
                 <th style="padding: 8px;">Terbayar</th>
                 <th style="padding: 8px;">Sisa Hutang</th>
                 <th style="padding: 8px;">Status</th>
-            @elseif(request('type') == 'stock-in' || request('type') == 'IN')
+            @elseif(request('type') == 'IN' || request('type') == 'IN')
                 <th style="padding: 8px;">No. Referensi</th>
                 <th style="padding: 8px;">Tanggal</th>
                 <th style="padding: 8px;">Barang</th>
@@ -88,7 +88,7 @@
                 <td style="padding: 6px;">Rp {{ number_format($item->terbayar ?? 0, 0, ',', '.') }}</td>
                 <td style="padding: 6px;">Rp {{ number_format($item->sisa_hutang ?? 0, 0, ',', '.') }}</td>
                 <td style="padding: 6px;">{{ $item->status ?? '-' }}</td>
-            @elseif(request('type') == 'stock-in' || request('type') == 'barang-masuk')
+            @elseif(request('type') == 'IN' || request('type') == 'IN')
                 <td style="padding: 6px;">{{ $item->no_ref ?? '-' }}</td>
                 <td style="padding: 6px;">{{ $item->tanggal ?? '-' }}</td>
                 <td style="padding: 6px;">{{ $item->barang->name ?? $item->nama_barang ?? '-' }}</td>
