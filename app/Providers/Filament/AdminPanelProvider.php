@@ -47,7 +47,6 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 \App\Filament\Widgets\WelcomeBannerWidget::class,
-                \App\Filament\Widgets\TotalAssetWidget::class,
                 \App\Filament\Widgets\StockOutBarChart::class,
                 \App\Filament\Widgets\StockOutDoughnutChart::class,
                 \App\Filament\Widgets\LatestStockTransactionsWidget::class,
