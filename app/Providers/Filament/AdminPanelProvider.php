@@ -10,8 +10,6 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -22,7 +20,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminPanelProvider extends PanelProvider
 {
-     public static function shouldRegisterNavigation(): bool
+    public static function shouldRegisterNavigation(): bool
     {
         return Auth::user()->role === 'super_admin';
     }
@@ -48,9 +46,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-             //   \App\Filament\Widgets\HutangStats::class,
+                \App\Filament\Widgets\WelcomeBannerWidget::class,
+                \App\Filament\Widgets\HutangStats::class,
                 \App\Filament\Widgets\PiutangStats::class,
                 \App\Filament\Widgets\TotalAssetWidget::class,
+                \App\Filament\Widgets\StockOutBarChart::class,
+                \App\Filament\Widgets\StockOutDoughnutChart::class,
+                \App\Filament\Widgets\LatestStockTransactionsWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
