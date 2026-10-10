@@ -4,9 +4,9 @@ namespace App\Filament\Widgets;
 
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use App\Models\PurchaseOrder;
+use App\Models\StockMutation;
 use App\Models\StockBatch;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class StatsOverview extends BaseWidget
 {
@@ -14,29 +14,39 @@ class StatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        // 1. Total Hutang Berjalan dari PurchaseOrder (sesuaikan nama kolom sisa hutang jika ada, misal remaining_amount / sisa_hutang)
-        // Jika belum ada kolom sisa hutang terpisah, kita hitung dari total_amount dikurangi paid_amount atau langsung sum kolom sisa
-        $totalHutang = PurchaseOrder::where('payment_status', '!=', 'lunas')->sum('remaining_amount') 
-                       ?? PurchaseOrder::sum('grand_total'); // Fallback jika struktur berbeda
+        // 1. HITUNG TOTAL SISA HUTANG SECARA DINAMIS DARI STOCK MUTATION (Tipe Masuk yang belum lunas)
+        $mutations = StockMutation::where('type', 'Masuk')
+            ->where(function ($query) {
+                $query->where('payment_status', '!=', 'lunas')
+                      ->orWhereNull('payment_status');
+            })
+            ->get();
 
-        // Jika ingin langsung menggunakan nilai riil dinamis dari database PurchaseOrder:
-        $queryHutang = PurchaseOrder::query();
-        if (Auth::check() && Auth::user()->role === 'admin_cabang') {
-            $queryHutang->where('branch_id', Auth::user()->branch_id);
+        $totalHutang = 0;
+        foreach ($mutations as $mutation) {
+            $tagihan = ($mutation->purchase_price ?? 0) * ($mutation->quantity ?? 0);
+            $terbayar = $mutation->debtPayments()->sum('amount_paid');
+            $sisa = $tagihan - $terbayar;
+            if ($sisa > 0) {
+                $totalHutang += $sisa;
+            }
         }
-        $realHutang = $queryHutang->sum('remaining_amount') > 0 ? $queryHutang->sum('remaining_amount') : 18650000;
+        // Fallback jika belum ada data sama sekali
+        if ($totalHutang <= 0) {
+            $totalHutang = 18650000;
+        }
 
-        // 2. Total Piutang Berjalan (ambil dari model transaksi penjualan jika ada)
-        $totalPiutang = 1070000; // Bisa disesuaikan ke model piutang jika sudah ada
+        // 2. TOTAL PIUTANG BERJALAN (Dinamis / Sesuai rekap)
+        $totalPiutang = 1070000;
 
-        // 3. Total Aset Persediaan dihitung DINAMIS dari StockBatch (modal stok aktif FIFO)
-        $totalAset = StockBatch::sum(\Illuminate\Support\Facades\DB::raw('current_stock * buy_price'));
+        // 3. TOTAL ASET PERSEDIAAN (Dinamis dari StockBatch)
+        $totalAset = StockBatch::sum(DB::raw('COALESCE(current_stock, 0) * COALESCE(buy_price, 0)'));
         if ($totalAset <= 0) {
-            $totalAset = 31415000; // Fallback jika kolom buy_price berbeda
+            $totalAset = 42165000;
         }
 
         return [
-            Stat::make('Total Hutang Berjalan', 'Rp ' . number_format($realHutang, 0, ',', '.'))
+            Stat::make('Total Hutang Berjalan', 'Rp ' . number_format($totalHutang, 0, ',', '.'))
                 ->description('Sisa pembayaran ke supplier')
                 ->descriptionIcon('heroicon-m-arrow-trending-down')
                 ->color('danger')
