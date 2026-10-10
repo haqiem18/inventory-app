@@ -9,8 +9,12 @@ use Illuminate\Support\Facades\Auth;
 
 class StockOutBarChart extends ChartWidget
 {
-    protected static ?string $heading = 'Barang Keluar (7 Hari Terakhir)';
     protected static ?int $sort = 3;
+
+    protected function getHeading(): ?string
+    {
+        return 'Barang Keluar (7 Hari Terakhir)';
+    }
 
     protected function getData(): array
     {
@@ -19,7 +23,7 @@ class StockOutBarChart extends ChartWidget
         $data = $days->map(function ($date) {
             $query = StockMutation::where('type', 'OUT')->whereDate('mutation_date', $date);
             
-            if (Auth::user()->role === 'admin_cabang') {
+            if (Auth::check() && Auth::user()->role === 'admin_cabang') {
                 $query->where('branch_id', Auth::user()->branch_id);
             }
 
