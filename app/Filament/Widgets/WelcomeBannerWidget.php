@@ -8,8 +8,8 @@ class WelcomeBannerWidget extends Widget
 {
     protected static ?int $sort = 1;
     
-    protected int | string | array $columnSpan = 'full';
-
-    // Memastikan Filament memanggil file view yang tepat
+    // Tambahkan kata kunci 'static' di sini
     protected static string $view = 'filament.widgets.welcome-banner';
+    
+    protected int | string | array $columnSpan = 'full';
 }
