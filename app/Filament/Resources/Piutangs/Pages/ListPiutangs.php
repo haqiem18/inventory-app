@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Piutangs\Pages;
 
 use App\Filament\Resources\Piutangs\PiutangResource;
-use Filament\Actions\CreateAction;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -33,7 +32,7 @@ class ListPiutangs extends ListRecords
                     $records = $query->get();
 
                     return redirect()->route('print.table', [
-                        'type' => 'stock-out',
+                        'type' => 'piutang', // Diubah dari 'stock-out' menjadi 'piutang'
                         'ids' => $records->pluck('id')->toArray()
                     ]);
                 }),
