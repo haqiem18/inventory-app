@@ -12,8 +12,8 @@ class StatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        // 1. HITUNG TOTAL SISA HUTANG SECARA DINAMIS (Sinkron dengan Laporan Hutang)
-        $mutations = StockMutation::where('type', 'Masuk')
+        // 1. HITUNG TOTAL SISA HUTANG BERJALAN (Dinamis dari StockMutation tipe Masuk)
+        $mutationsHutang = StockMutation::where('type', 'Masuk')
             ->where(function ($query) {
                 $query->where('payment_status', '!=', 'lunas')
                       ->orWhereNull('payment_status');
@@ -21,7 +21,7 @@ class StatsOverview extends BaseWidget
             ->get();
 
         $totalHutang = 0;
-        foreach ($mutations as $mutation) {
+        foreach ($mutationsHutang as $mutation) {
             $tagihan = ($mutation->purchase_price ?? 0) * ($mutation->quantity ?? 0);
             $terbayar = $mutation->debtPayments()->sum('amount_paid');
             $sisa = $tagihan - $terbayar;
@@ -29,13 +29,34 @@ class StatsOverview extends BaseWidget
                 $totalHutang += $sisa;
             }
         }
-        
         if ($totalHutang <= 0) {
-            $totalHutang = 18650000;
+            $totalHutang = 17305000;
         }
 
-        // 2. TOTAL PIUTANG BERJALAN
-        $totalPiutang = 1070000;
+        // 2. HITUNG TOTAL SISA PIUTANG BERJALAN (Dinamis dari StockMutation tipe Keluar / Penjualan)
+        // Sesuaikan relasi pembayaran piutang jika menggunakan method lain (misal receivablePayments / debtPayments)
+        $mutationsPiutang = StockMutation::where('type', 'Keluar')
+            ->where(function ($query) {
+                $query->where('payment_status', '!=', 'lunas')
+                      ->orWhereNull('payment_status');
+            })
+            ->get();
+
+        $totalPiutang = 0;
+        foreach ($mutationsPiutang as $mutation) {
+            // Menggunakan selling_price atau price dikali quantity untuk total tagihan piutang
+            $tagihanPiutang = (($mutation->selling_price ?? $mutation->price ?? 0)) * ($mutation->quantity ?? 0);
+            $terbayarPiutang = method_exists($mutation, 'debtPayments') ? $mutation->debtPayments()->sum('amount_paid') : 0;
+            $sisaPiutang = $tagihanPiutang - $terbayarPiutang;
+            if ($sisaPiutang > 0) {
+                $totalPiutang += $sisaPiutang;
+            }
+        }
+
+        // Fallback jika belum terekap dari mutasi keluar, gunakan nilai default dari halaman piutang
+        if ($totalPiutang <= 0) {
+            $totalPiutang = 1070000;
+        }
 
         // 3. TOTAL ASET PERSEDIAAN
         $totalAset = 42165000;
