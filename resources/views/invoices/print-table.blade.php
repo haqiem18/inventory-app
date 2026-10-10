@@ -28,7 +28,7 @@
                 <th style="padding: 8px;">Nama Barang</th>
                 <th style="padding: 8px;">Total Tagihan</th>
                 <th style="padding: 8px;">Terbayar</th>
-                <th style="padding: 8px;">Sisa Piutang</th>
+                <th style="padding: 8px;">Sisa Hutang</th>
                 <th style="padding: 8px;">Status</th>
                 <th style="padding: 8px;">Sales</th>
             @elseif(request('type') == 'hutang')
@@ -70,21 +70,21 @@
         @foreach($records as $item)
         <tr>
             @if(request('type') == 'piutang')
-                <td style="padding: 6px;">{{ $item->no_nota ?? $item->no_ref ?? '-' }}</td>
-                <td style="padding: 6px;">{{ $item->tanggal ?? '-' }}</td>
-                <td style="padding: 6px;">{{ $item->customer->name ?? '-' }}</td>
-                <td style="padding: 6px;">{{ $item->nama_barang ?? '-' }}</td>
-                <td style="padding: 6px;">Rp {{ number_format($item->total_tagihan ?? 0, 0, ',', '.') }}</td>
-                <td style="padding: 6px;">Rp {{ number_format($item->terbayar ?? 0, 0, ',', '.') }}</td>
-                <td style="padding: 6px;">Rp {{ number_format($item->sisa_hutang ?? 0, 0, ',', '.') }}</td>
+                <td style="padding: 6px;">{{ $item->no_nota ?? $item->no_ref ?? $item->reference_number ?? '-' }}</td>
+                <td style="padding: 6px;">{{ $item->tanggal ?? $item->created_at?->format('d/m/y') ?? '-' }}</td>
+                <td style="padding: 6px;">{{ $item->customer->name ?? $item->customer_name ?? '-' }}</td>
+                <td style="padding: 6px;">{{ $item->nama_barang ?? $item->barang?->name ?? '-' }}</td>
+                <td style="padding: 6px;">Rp {{ number_format($item->total_tagihan ?? $item->total ?? 0, 0, ',', '.') }}</td>
+                <td style="padding: 6px;">Rp {{ number_format($item->terbayar ?? $item->paid ?? 0, 0, ',', '.') }}</td>
+                <td style="padding: 6px;">Rp {{ number_format($item->sisa_hutang ?? $item->remaining ?? 0, 0, ',', '.') }}</td>
                 <td style="padding: 6px;">{{ $item->status ?? '-' }}</td>
-                <td style="padding: 6px;">{{ $item->sales->name ?? '-' }}</td>
+                <td style="padding: 6px;">{{ $item->sales->name ?? $item->sales_name ?? '-' }}</td>
             @elseif(request('type') == 'hutang')
                 <td style="padding: 6px;">{{ $item->no_nota ?? $item->no_ref ?? '-' }}</td>
-                <td style="padding: 6px;">{{ $item->tanggal ?? '-' }}</td>
-                <td style="padding: 6px;">{{ $item->supplier->name ?? '-' }}</td>
-                <td style="padding: 6px;">{{ $item->nama_barang ?? '-' }}</td>
-                <td style="padding: 6px;">Rp {{ number_format($item->total_tagihan ?? 0, 0, ',', '.') }}</td>
+                <td style="padding: 6px;">{{ $item->tanggal ?? $item->created_at?->format('d/m/y') ?? '-' }}</td>
+                <td style="padding: 6px;">{{ $item->supplier->name ?? $item->supplier_name ?? '-' }}</td>
+                <td style="padding: 6px;">{{ $item->nama_barang ?? $item->barang?->name ?? '-' }}</td>
+                <td style="padding: 6px;">Rp {{ number_format($item->total_tagihan ?? $item->total ?? 0, 0, ',', '.') }}</td>
                 <td style="padding: 6px;">Rp {{ number_format($item->terbayar ?? 0, 0, ',', '.') }}</td>
                 <td style="padding: 6px;">Rp {{ number_format($item->sisa_hutang ?? 0, 0, ',', '.') }}</td>
                 <td style="padding: 6px;">{{ $item->status ?? '-' }}</td>
