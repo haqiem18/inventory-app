@@ -15,7 +15,7 @@ class StockMutationObserver
     {
         // Pastikan status otomatis jadi 'pending' jika kosong/null
         if (empty($mutation->status)) {
-            $mutation->status = 'pending';
+            $mutation->status = 'PENDING';
         }
 
         $mutation->subtotal = $mutation->quantity * $mutation->purchase_price;
