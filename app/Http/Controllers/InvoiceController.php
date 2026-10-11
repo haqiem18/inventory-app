@@ -27,8 +27,8 @@ class InvoiceController extends Controller
         $type = $request->query('type');
         $ids = $request->query('ids', []);
 
-        // Ambil data berdasarkan array ID yang dikirim dari tombol cetak tabel
-        $query = StockMutation::whereIn('id', $ids)->with(['product', 'customer', 'supplier', 'sales']);
+        // Ambil data berdasarkan array ID tanpa with() yang berisiko relasi belum ada
+        $query = StockMutation::whereIn('id', $ids);
 
         if ($type == 'piutang') {
             $title = 'Laporan Piutang';
@@ -37,13 +37,13 @@ class InvoiceController extends Controller
                 return [
                     $item->reference_number ?? '-',
                     $item->mutation_date ?? '-',
-                    $item->customer->name ?? '-',
-                    $item->product->name ?? '-',
+                    $item->customer->name ?? $item->customer_name ?? '-',
+                    $item->product->name ?? $item->nama_barang ?? '-',
                     'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.'),
                     'Rp ' . number_format($item->paid_amount ?? 0, 0, ',', '.'),
                     'Rp ' . number_format(($item->subtotal ?? 0) - ($item->paid_amount ?? 0), 0, ',', '.'),
                     $item->payment_status ?? '-',
-                    $item->sales->name ?? '-'
+                    $item->sales->name ?? $item->sales_name ?? '-'
                 ];
             };
         } elseif ($type == 'hutang') {
@@ -53,8 +53,8 @@ class InvoiceController extends Controller
                 return [
                     $item->reference_number ?? '-',
                     $item->mutation_date ?? '-',
-                    $item->supplier->name ?? '-',
-                    $item->product->name ?? '-',
+                    $item->supplier->name ?? $item->supplier_name ?? '-',
+                    $item->product->name ?? $item->nama_barang ?? '-',
                     'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.'),
                     'Rp ' . number_format($item->paid_amount ?? 0, 0, ',', '.'),
                     'Rp ' . number_format(($item->subtotal ?? 0) - ($item->paid_amount ?? 0), 0, ',', '.'),
@@ -68,7 +68,7 @@ class InvoiceController extends Controller
                 return [
                     $item->reference_number ?? '-',
                     $item->mutation_date ?? '-',
-                    $item->product->name ?? '-',
+                    $item->product->name ?? $item->nama_barang ?? '-',
                     $item->branch ?? '-',
                     $item->supplier->name ?? '-',
                     $item->quantity ?? 0,
@@ -83,7 +83,7 @@ class InvoiceController extends Controller
                 return [
                     $item->reference_number ?? '-',
                     $item->mutation_date ?? '-',
-                    $item->product->name ?? '-',
+                    $item->product->name ?? $item->nama_barang ?? '-',
                     $item->branch ?? '-',
                     $item->customer->name ?? '-',
                     $item->quantity ?? 0,
