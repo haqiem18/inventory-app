@@ -36,24 +36,25 @@ class InvoiceController extends Controller
             $columns = ['No. Nota', 'Tanggal', 'Customer', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Piutang', 'Status', 'Sales'];
 
             $rowCallback = function ($item) {
-                // Menyesuaikan penarikan Total Tagihan agar sinkron dengan panel Piutang
-                $totalTagihan = $item->subtotal ?? $item->total ?? (($item->quantity ?? 0) * ($item->price ?? 0));
+                // Menyamakan rumus total tagihan dengan Filament (price * quantity)
+                $totalTagihan = ($item->price ?? 0) * ($item->quantity ?? 0);
+                if ($totalTagihan == 0) {
+                    $totalTagihan = $item->subtotal ?? $item->total ?? 0;
+                }
 
-                // Mengambil nilai terbayar
+                // Menyamakan perhitungan terbayar dari debtPayments
                 $terbayar = 0;
-                if (method_exists($item, 'receivablePayments')) {
-                    $terbayar = $item->receivablePayments()->sum('amount_paid') ?? 0;
-                } elseif (method_exists($item, 'payments')) {
-                    $terbayar = $item->payments()->sum('amount_paid') ?? 0;
+                if (method_exists($item, 'debtPayments')) {
+                    $terbayar = $item->debtPayments()->sum('amount_paid') ?? 0;
                 }
                 if ($terbayar == 0) {
                     $terbayar = $item->paid_amount ?? 0;
                 }
 
-                $sisa = $totalTagihan - $terbayar;
+                $sisa = ($item->payment_status === 'lunas') ? 0 : ($totalTagihan - $terbayar);
 
                 $customerName = $item->customer->name ?? $item->nama_customer ?? '-';
-                $salesName = $item->sales->name ?? $item->sales_person ?? $item->sales ?? '-';
+                $salesName = $item->salesPerson->name ?? $item->sales->name ?? $item->sales_person ?? '-';
 
                 return [
                     $item->reference_number ?? '-',
@@ -63,21 +64,19 @@ class InvoiceController extends Controller
                     'Rp ' . number_format($totalTagihan, 0, ',', '.'),
                     'Rp ' . number_format($terbayar, 0, ',', '.'),
                     'Rp ' . number_format($sisa, 0, ',', '.'),
-                    $item->payment_status ?? '-',
+                    $item->payment_status ?? 'hutang',
                     $salesName
                 ];
             };
 
-            // Ambil data dan hitung baris summary untuk laporan piutang
+            // Ambil data dan hitung baris summary agar sinkron dengan Filament
             $records = $query->get();
-            $sumTagihan = $records->sum(fn($i) => $i->subtotal ?? $i->total ?? (($i->quantity ?? 0) * ($i->price ?? 0)));
+            $sumTagihan = $records->sum(fn($i) => (($i->price ?? 0) * ($i->quantity ?? 0)) ?: ($i->subtotal ?? $i->total ?? 0));
 
             $sumTerbayar = $records->sum(function ($i) {
                 $paid = 0;
-                if (method_exists($i, 'receivablePayments')) {
-                    $paid = $i->receivablePayments()->sum('amount_paid') ?? 0;
-                } elseif (method_exists($i, 'payments')) {
-                    $paid = $i->payments()->sum('amount_paid') ?? 0;
+                if (method_exists($i, 'debtPayments')) {
+                    $paid = $i->debtPayments()->sum('amount_paid') ?? 0;
                 }
                 if ($paid == 0) {
                     $paid = $i->paid_amount ?? 0;
@@ -85,7 +84,12 @@ class InvoiceController extends Controller
                 return $paid;
             });
 
-            $sumSisa = $sumTagihan - $sumTerbayar;
+            $sumSisa = $records->sum(function ($i) {
+                if (($i->payment_status ?? 'hutang') === 'lunas') return 0;
+                $tTagihan = (($i->price ?? 0) * ($i->quantity ?? 0)) ?: ($i->subtotal ?? $i->total ?? 0);
+                $tBayar = method_exists($i, 'debtPayments') ? ($i->debtPayments()->sum('amount_paid') ?? 0) : ($i->paid_amount ?? 0);
+                return max(0, $tTagihan - $tBayar);
+            });
 
             $totals = [
                 'colspan' => 4,
