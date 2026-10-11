@@ -32,7 +32,7 @@ class ListPiutangs extends ListRecords
                     $records = $query->get();
 
                     return redirect()->route('print.table', [
-                        'type' => 'hutang', // <--- Ubah jadi 'piutang'
+                        'type' => 'piutang', // <--- Ubah jadi 'piutang'
                         'ids' => $records->pluck('id')->toArray()
                     ]);
                 }),
