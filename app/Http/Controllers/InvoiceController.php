@@ -209,7 +209,8 @@ class InvoiceController extends Controller
             return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback', 'totals'));
         } else {
             $title = 'Laporan Data Barang Keluar';
-            $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Customer', 'Qty', 'Harga Jual', 'Total'];
+            $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Customer', 'Qty', 'Harga Beli', 'Harga Jual', 'Total'];
+
             $rowCallback = function ($item) {
                 $branchName = '-';
                 if (is_object($item->branch)) {
@@ -220,20 +221,40 @@ class InvoiceController extends Controller
                     $branchName = $item->branch ?? '-';
                 }
 
+                $qty = $item->quantity ?? 0;
+                $hargaBeli = $item->purchase_price ?? 0;
+                $hargaJual = $item->price ?? 0;
+                $totalHarga = $item->subtotal ?? ($qty * $hargaJual);
+
                 return [
                     $item->reference_number ?? '-',
                     $item->mutation_date ?? '-',
                     $item->product->name ?? $item->nama_barang ?? '-',
                     $branchName,
                     $item->customer->name ?? '-',
-                    $item->quantity ?? 0,
-                    'Rp ' . number_format($item->price ?? 0, 0, ',', '.'),
-                    'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.')
+                    $qty,
+                    'Rp ' . number_format($hargaBeli, 0, ',', '.'),
+                    'Rp ' . number_format($hargaJual, 0, ',', '.'),
+                    'Rp ' . number_format($totalHarga, 0, ',', '.')
                 ];
             };
 
+            // Ambil data dan hitung baris summary untuk laporan barang keluar
             $records = $query->get();
-            return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback'));
+            $sumQty = $records->sum(fn($i) => $i->quantity ?? 0);
+            $sumTotalHarga = $records->sum(fn($i) => $i->subtotal ?? (($i->quantity ?? 0) * ($i->price ?? 0)));
+
+            $totals = [
+                'colspan' => 5, // Dilewati sampai kolom Customer (No. Ref, Tanggal, Barang, Cabang, Customer)
+                'values' => [
+                    $sumQty,                                    // Masuk ke kolom Qty
+                    '',                                         // Kosong untuk kolom Harga Beli
+                    '',                                         // Kosong untuk kolom Harga Jual
+                    'Rp ' . number_format($sumTotalHarga, 0, ',', '.') // Masuk ke kolom Total
+                ]
+            ];
+
+            return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback', 'totals'));
         }
     }
 }
