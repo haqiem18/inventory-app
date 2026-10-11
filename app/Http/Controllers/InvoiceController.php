@@ -34,22 +34,67 @@ class InvoiceController extends Controller
         if ($type == 'piutang') {
             $title = 'Laporan Piutang';
             $columns = ['No. Nota', 'Tanggal', 'Customer', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Piutang', 'Status'];
+
             $rowCallback = function ($item) {
-                $sisa = ($item->subtotal ?? 0) - ($item->paid_amount ?? 0);
+                $totalTagihan = $item->subtotal ?? $item->total ?? 0;
+
+                // Menjumlahkan pembayaran dari relasi pembayaran piutang jika ada (misal: receivablePayments atau debtPayments/payments)
+                // Sesuaikan nama relasi jika menggunakan nama lain, atau fallback ke paid_amount
+                $terbayar = 0;
+                if (method_exists($item, 'receivablePayments')) {
+                    $terbayar = $item->receivablePayments()->sum('amount_paid') ?? 0;
+                } elseif (method_exists($item, 'payments')) {
+                    $terbayar = $item->payments()->sum('amount_paid') ?? 0;
+                }
+
+                if ($terbayar == 0) {
+                    $terbayar = $item->paid_amount ?? 0;
+                }
+
+                $sisa = $totalTagihan - $terbayar;
+
                 return [
                     $item->reference_number ?? '-',
                     $item->mutation_date ?? '-',
                     $item->customer->name ?? '-',
                     $item->product->name ?? '-',
-                    'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.'),
-                    'Rp ' . number_format($item->paid_amount ?? 0, 0, ',', '.'),
+                    'Rp ' . number_format($totalTagihan, 0, ',', '.'),
+                    'Rp ' . number_format($terbayar, 0, ',', '.'),
                     'Rp ' . number_format($sisa, 0, ',', '.'),
                     $item->payment_status ?? '-'
                 ];
             };
 
+            // Ambil data dan hitung baris summary untuk laporan piutang
             $records = $query->get();
-            return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback'));
+            $sumTagihan = $records->sum(fn($i) => $i->subtotal ?? $i->total ?? 0);
+
+            $sumTerbayar = $records->sum(function ($i) {
+                $paid = 0;
+                if (method_exists($i, 'receivablePayments')) {
+                    $paid = $i->receivablePayments()->sum('amount_paid') ?? 0;
+                } elseif (method_exists($i, 'payments')) {
+                    $paid = $i->payments()->sum('amount_paid') ?? 0;
+                }
+                if ($paid == 0) {
+                    $paid = $i->paid_amount ?? 0;
+                }
+                return $paid;
+            });
+
+            $sumSisa = $sumTagihan - $sumTerbayar;
+
+            $totals = [
+                'colspan' => 5,
+                'values' => [
+                    'Rp ' . number_format($sumTagihan, 0, ',', '.'),
+                    'Rp ' . number_format($sumTerbayar, 0, ',', '.'),
+                    'Rp ' . number_format($sumSisa, 0, ',', '.'),
+                    ''
+                ]
+            ];
+
+            return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback', 'totals'));
         } elseif ($type == 'hutang') {
             $title = 'Laporan Hutang';
             $columns = ['No. Nota', 'Tanggal', 'Supplier', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Hutang', 'Status'];
