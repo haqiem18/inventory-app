@@ -57,12 +57,12 @@ class InvoiceController extends Controller
             $rowCallback = function ($item) {
                 $totalTagihan = $item->subtotal ?? $item->total ?? 0;
 
-                // Cek apakah ada field paid_amount, atau relasi pembayaran, atau fallback ke 0
-                $terbayar = $item->paid_amount ?? $item->total_paid ?? 0;
+                // Menjumlahkan amount_paid dari relasi debtPayments
+                $terbayar = $item->debtPayments()->sum('amount_paid') ?? 0;
 
-                // Jika data terbayar kosong di stock_mutation, coba hitung dari relasi jika ada (misal pembayaran hutang)
-                if ($terbayar == 0 && method_exists($item, 'debtPayments')) {
-                    $terbayar = $item->debtPayments()->sum('amount') ?? 0;
+                // Fallback jika paid_amount di stock_mutations juga terisi
+                if ($terbayar == 0) {
+                    $terbayar = $item->paid_amount ?? 0;
                 }
 
                 $sisa = $totalTagihan - $terbayar;
@@ -83,11 +83,10 @@ class InvoiceController extends Controller
             $records = $query->get();
             $sumTagihan = $records->sum(fn($i) => $i->subtotal ?? $i->total ?? 0);
 
-            // Hitung total terbayar yang konsisten dengan rowCallback
             $sumTerbayar = $records->sum(function ($i) {
-                $paid = $i->paid_amount ?? $i->total_paid ?? 0;
-                if ($paid == 0 && method_exists($i, 'debtPayments')) {
-                    $paid = $i->debtPayments()->sum('amount') ?? 0;
+                $paid = $i->debtPayments()->sum('amount_paid') ?? 0;
+                if ($paid == 0) {
+                    $paid = $i->paid_amount ?? 0;
                 }
                 return $paid;
             });
