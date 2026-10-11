@@ -31,7 +31,7 @@ class InvoiceController extends Controller
         // Ambil data murni berdasarkan array ID yang dikirim dari tombol cetak tanpa filter tambahan
         $query = StockMutation::whereIn('id', $ids);
 
-        if ($type == 'piutang') {
+        if  ($type == 'piutang') {
             $title = 'Laporan Piutang';
             $columns = ['No. Nota', 'Tanggal', 'Customer', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Piutang', 'Status', 'Sales'];
 
@@ -41,7 +41,7 @@ class InvoiceController extends Controller
                     $totalTagihan = $item->subtotal ?? $item->total ?? 0;
                 }
 
-                // Jika status lunas atau tidak ada pembayaran tercatat, set terbayar mengikuti total tagihan atau 0 sesuai kebutuhan
+                // Jika status lunas, samakan dengan Filament (Terbayar tampil 0 atau sesuai paid_amount jika tidak dihitung cicilan)
                 $terbayar = 0;
                 if ($item->payment_status !== 'lunas') {
                     if (method_exists($item, 'debtPayments')) {
@@ -50,9 +50,6 @@ class InvoiceController extends Controller
                     if ($terbayar == 0) {
                         $terbayar = $item->paid_amount ?? 0;
                     }
-                } else {
-                    // Jika lunas, biasanya terbayar sama dengan total tagihan
-                    $terbayar = $totalTagihan;
                 }
 
                 $sisa = ($item->payment_status === 'lunas') ? 0 : ($totalTagihan - $terbayar);
@@ -73,13 +70,13 @@ class InvoiceController extends Controller
                 ];
             };
 
-            // Ambil data dan hitung baris summary agar sinkron
+            // Ambil data dan hitung baris summary agar sinkron 100% dengan Filament
             $records = $query->get();
             $sumTagihan = $records->sum(fn($i) => (($i->price ?? 0) * ($i->quantity ?? 0)) ?: ($i->subtotal ?? $i->total ?? 0));
 
             $sumTerbayar = $records->sum(function ($i) {
                 if (($i->payment_status ?? 'hutang') === 'lunas') {
-                    return (($i->price ?? 0) * ($i->quantity ?? 0)) ?: ($i->subtotal ?? $i->total ?? 0);
+                    return 0; // Sesuai dengan panel Filament di mana transaksi lunas nilai terbayarnya dihitung 0 / tidak masuk akumulasi cicilan
                 }
                 $paid = 0;
                 if (method_exists($i, 'debtPayments')) {
