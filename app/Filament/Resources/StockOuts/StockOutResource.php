@@ -8,6 +8,7 @@ use App\Models\ProductStock;
 use BackedEnum;
 use UnitEnum;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction as ActionsBulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -335,7 +336,7 @@ class StockOutResource extends Resource
                     DeleteBulkAction::make(),
 
                     // Tombol Bulk Cetak Surat Jalan Terpilih
-                    BulkAction::make('bulk_surat_jalan')
+                    ActionsBulkAction::make('bulk_surat_jalan')
                         ->label('Cetak Surat Jalan Terpilih')
                         ->icon('heroicon-o-document-text')
                         ->color('success')
