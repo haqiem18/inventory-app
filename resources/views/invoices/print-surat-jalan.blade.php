@@ -47,18 +47,37 @@
 
     @php
         $first = $records->first();
+
+        // Logika penentuan nama dan alamat tujuan yang dinamis
+        $namaTujuan = '-';
+        $alamatTujuan = '-';
+
+        if ($first) {
+            if ($first->sub_type === 'mutasi' && $first->toBranch) {
+                $namaTujuan = 'Cabang Tujuan: ' . $first->toBranch->name;
+                $alamatTujuan = $first->toBranch->address ?? '-';
+            } elseif ($first->customer) {
+                $namaTujuan = $first->customer->name;
+                $alamatTujuan = $first->customer->address ?? '-';
+            } elseif ($first->supplier) {
+                $namaTujuan = $first->supplier->name;
+                $alamatTujuan = $first->supplier->address ?? '-';
+            } else {
+                $namaTujuan = $first->nama_customer ?? '-';
+            }
+        }
     @endphp
 
     <div class="info-section">
         <div class="info-box">
             <table>
                 <tr>
-                    <td style="width: 90px;"><strong>Kepada Yth:</strong></td>
-                    <td>{{ $first->customer->name ?? '-' }}</td>
+                    <td style="width: 100px;"><strong>Kepada Yth:</strong></td>
+                    <td>{{ $namaTujuan }}</td>
                 </tr>
                 <tr>
                     <td><strong>Alamat:</strong></td>
-                    <td>{{ $first->customer->address ?? '-' }}</td>
+                    <td>{{ $alamatTujuan }}</td>
                 </tr>
             </table>
         </div>
@@ -73,7 +92,7 @@
                     <td>{{ $first->mutation_date ?? '-' }}</td>
                 </tr>
                 <tr>
-                    <td><strong>Cabang:</strong></td>
+                    <td><strong>Cabang Asal:</strong></td>
                     <td>{{ $first->branch->name ?? '-' }}</td>
                 </tr>
             </table>

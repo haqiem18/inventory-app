@@ -261,18 +261,15 @@ class InvoiceController extends Controller
 
     public function printSuratJalan(Request $request)
     {
-        // Bisa berdasarkan ids atau reference_number
         $ids = $request->input('ids', []);
         $reference = $request->input('ref');
 
-        $query = \App\Models\StockMutation::with(['product', 'customer', 'branch']);
+        $query = \App\Models\StockMutation::with(['product', 'customer', 'branch', 'toBranch']);
 
         if (!empty($ids)) {
             $query->whereIn('id', $ids);
         } elseif ($reference) {
             $query->where('reference_number', $reference);
-        } else {
-            $query->where('sub_type', 'penjualan')->latest()->take(10);
         }
 
         $records = $query->get();
