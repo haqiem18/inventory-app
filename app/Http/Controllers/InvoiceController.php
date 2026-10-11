@@ -36,19 +36,23 @@ class InvoiceController extends Controller
             $columns = ['No. Nota', 'Tanggal', 'Customer', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Piutang', 'Status', 'Sales'];
 
             $rowCallback = function ($item) {
-                // Menyamakan rumus total tagihan dengan Filament (price * quantity)
                 $totalTagihan = ($item->price ?? 0) * ($item->quantity ?? 0);
                 if ($totalTagihan == 0) {
                     $totalTagihan = $item->subtotal ?? $item->total ?? 0;
                 }
 
-                // Menyamakan perhitungan terbayar dari debtPayments
+                // Jika status lunas atau tidak ada pembayaran tercatat, set terbayar mengikuti total tagihan atau 0 sesuai kebutuhan
                 $terbayar = 0;
-                if (method_exists($item, 'debtPayments')) {
-                    $terbayar = $item->debtPayments()->sum('amount_paid') ?? 0;
-                }
-                if ($terbayar == 0) {
-                    $terbayar = $item->paid_amount ?? 0;
+                if ($item->payment_status !== 'lunas') {
+                    if (method_exists($item, 'debtPayments')) {
+                        $terbayar = $item->debtPayments()->sum('amount_paid') ?? 0;
+                    }
+                    if ($terbayar == 0) {
+                        $terbayar = $item->paid_amount ?? 0;
+                    }
+                } else {
+                    // Jika lunas, biasanya terbayar sama dengan total tagihan
+                    $terbayar = $totalTagihan;
                 }
 
                 $sisa = ($item->payment_status === 'lunas') ? 0 : ($totalTagihan - $terbayar);
@@ -69,11 +73,14 @@ class InvoiceController extends Controller
                 ];
             };
 
-            // Ambil data dan hitung baris summary agar sinkron dengan Filament
+            // Ambil data dan hitung baris summary agar sinkron
             $records = $query->get();
             $sumTagihan = $records->sum(fn($i) => (($i->price ?? 0) * ($i->quantity ?? 0)) ?: ($i->subtotal ?? $i->total ?? 0));
 
             $sumTerbayar = $records->sum(function ($i) {
+                if (($i->payment_status ?? 'hutang') === 'lunas') {
+                    return (($i->price ?? 0) * ($i->quantity ?? 0)) ?: ($i->subtotal ?? $i->total ?? 0);
+                }
                 $paid = 0;
                 if (method_exists($i, 'debtPayments')) {
                     $paid = $i->debtPayments()->sum('amount_paid') ?? 0;
@@ -92,14 +99,13 @@ class InvoiceController extends Controller
             });
 
             $totals = [
-                'colspan' => 4, // Kolom 1 sampai 4 dilewati untuk label "Summary / Total:"
+                'colspan' => 4,
                 'values' => [
+                    'Rp ' . number_format($sumTagihan, 0, ',', '.'),
+                    'Rp ' . number_format($sumTerbayar, 0, ',', '.'),
+                    'Rp ' . number_format($sumSisa, 0, ',', '.'),
                     '',
-                    'Rp ' . number_format($sumTagihan, 0, ',', '.'),   // Kolom 5: Total Tagihan
-                    'Rp ' . number_format($sumTerbayar, 0, ',', '.'), // Kolom 6: Terbayar
-                    'Rp ' . number_format($sumSisa, 0, ',', '.'),     // Kolom 7: Sisa Piutang
-                    '', // Kolom 8: Status (kosong)
-                    ''  // Kolom 9: Sales (kosong)
+                    ''
                 ]
             ];
 
