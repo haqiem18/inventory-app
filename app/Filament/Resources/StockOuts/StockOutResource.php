@@ -11,6 +11,7 @@ use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Tables\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
@@ -84,8 +85,8 @@ class StockOutResource extends Resource
                     ->searchable()
                     ->preload()
                     ->live()
-                    ->default(fn() => Auth::user()->role === 'admin_cabang' ? Auth::user()->branch_id : null)
-                    ->disabled(fn() => Auth::user()->role === 'admin_cabang')
+                    ->default(fn () => Auth::user()->role === 'admin_cabang' ? Auth::user()->branch_id : null)
+                    ->disabled(fn () => Auth::user()->role === 'admin_cabang')
                     ->dehydrated(true),
 
                 Select::make('to_branch_id')
@@ -205,7 +206,7 @@ class StockOutResource extends Resource
                     ->summarize(
                         Sum::make()
                             ->label('Total Qty')
-                            ->using(fn($query) => $query->sum('quantity'))
+                            ->using(fn ($query) => $query->sum('quantity'))
                     ),
 
                 TextColumn::make('purchase_price')
@@ -227,7 +228,7 @@ class StockOutResource extends Resource
                     ->summarize(
                         Sum::make()
                             ->label('Grand Total')
-                            ->using(fn($query) => $query->sum('subtotal'))
+                            ->using(fn ($query) => $query->sum('subtotal'))
                             ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.'))
                     )
                     ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
@@ -334,7 +335,7 @@ class StockOutResource extends Resource
                     DeleteBulkAction::make(),
 
                     // Tombol Bulk Cetak Surat Jalan Terpilih
-                    \Filament\Tables\Actions\BulkAction::make('bulk_surat_jalan')
+                    BulkAction::make('bulk_surat_jalan')
                         ->label('Cetak Surat Jalan Terpilih')
                         ->icon('heroicon-o-document-text')
                         ->color('success')
