@@ -31,25 +31,18 @@ class InvoiceController extends Controller
         // Ambil data murni berdasarkan array ID yang dikirim dari tombol cetak tanpa filter tambahan
         $query = StockMutation::whereIn('id', $ids);
 
-        if  ($type == 'piutang') {
+        if ($type == 'piutang') {
             $title = 'Laporan Piutang';
             $columns = ['No. Nota', 'Tanggal', 'Customer', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Piutang', 'Status', 'Sales'];
 
             $rowCallback = function ($item) {
-                // Mengambil total tagihan secara akurat (biasanya dari subtotal transaksi / total tagihan penjualan)
-                $totalTagihan = $item->subtotal ?? $item->total ?? 0;
-
-                // Mengambil nilai terbayar dari relasi pembayaran piutang (misal: receivablePayments atau pembayaran terkait)
-                $terbayar = 0;
-                if (method_exists($item, 'receivablePayments')) {
-                    $terbayar = $item->receivablePayments()->sum('amount_paid') ?? 0;
-                } elseif (method_exists($item, 'payments')) {
-                    $terbayar = $item->payments()->sum('amount_paid') ?? 0;
-                }
+                // Menyesuaikan pengambilan total tagihan dan terbayar agar sama persis dengan Filament
+                $totalTagihan = $item->total ?? $item->subtotal ?? 0;
+                $terbayar = $item->paid_amount ?? 0;
                 
-                // Fallback jika menggunakan kolom langsung di tabel
-                if ($terbayar == 0) {
-                    $terbayar = $item->paid_amount ?? 0;
+                // Jika ada relasi pembayaran piutang
+                if ($terbayar == 0 && method_exists($item, 'receivablePayments')) {
+                    $terbayar = $item->receivablePayments()->sum('amount_paid') ?? 0;
                 }
 
                 $sisa = $totalTagihan - $terbayar;
@@ -72,21 +65,16 @@ class InvoiceController extends Controller
 
             // Ambil data dan hitung baris summary untuk laporan piutang
             $records = $query->get();
-            $sumTagihan = $records->sum(fn($i) => $i->subtotal ?? $i->total ?? 0);
-
+            $sumTagihan = $records->sum(fn($i) => $i->total ?? $i->subtotal ?? 0);
+            
             $sumTerbayar = $records->sum(function ($i) {
-                $paid = 0;
-                if (method_exists($i, 'receivablePayments')) {
+                $paid = $i->paid_amount ?? 0;
+                if ($paid == 0 && method_exists($i, 'receivablePayments')) {
                     $paid = $i->receivablePayments()->sum('amount_paid') ?? 0;
-                } elseif (method_exists($i, 'payments')) {
-                    $paid = $i->payments()->sum('amount_paid') ?? 0;
-                }
-                if ($paid == 0) {
-                    $paid = $i->paid_amount ?? 0;
                 }
                 return $paid;
             });
-
+            
             $sumSisa = $sumTagihan - $sumTerbayar;
 
             $totals = [
