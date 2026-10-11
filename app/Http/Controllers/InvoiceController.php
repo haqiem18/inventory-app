@@ -33,35 +33,38 @@ class InvoiceController extends Controller
 
         if ($type == 'piutang') {
             $title = 'Laporan Piutang';
-            $columns = ['No. Nota', 'Tanggal', 'Customer', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Piutang', 'Status'];
+            $columns = ['No. Nota', 'Tanggal', 'Customer', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Piutang', 'Status', 'Sales'];
 
             $rowCallback = function ($item) {
                 $totalTagihan = $item->subtotal ?? $item->total ?? 0;
 
-                // Menjumlahkan pembayaran dari relasi pembayaran piutang jika ada (misal: receivablePayments atau debtPayments/payments)
-                // Sesuaikan nama relasi jika menggunakan nama lain, atau fallback ke paid_amount
+                // Mengambil nilai terbayar (menyesuaikan dengan tabel pembayaran atau paid_amount)
                 $terbayar = 0;
                 if (method_exists($item, 'receivablePayments')) {
                     $terbayar = $item->receivablePayments()->sum('amount_paid') ?? 0;
                 } elseif (method_exists($item, 'payments')) {
                     $terbayar = $item->payments()->sum('amount_paid') ?? 0;
                 }
-
                 if ($terbayar == 0) {
                     $terbayar = $item->paid_amount ?? 0;
                 }
 
                 $sisa = $totalTagihan - $terbayar;
 
+                // Mengambil nama customer dan sales dengan aman
+                $customerName = $item->customer->name ?? $item->nama_customer ?? '-';
+                $salesName = $item->sales->name ?? $item->sales_person ?? $item->sales ?? '-';
+
                 return [
                     $item->reference_number ?? '-',
                     $item->mutation_date ?? '-',
-                    $item->customer->name ?? '-',
-                    $item->product->name ?? '-',
+                    $customerName,
+                    $item->product->name ?? $item->nama_barang ?? '-',
                     'Rp ' . number_format($totalTagihan, 0, ',', '.'),
                     'Rp ' . number_format($terbayar, 0, ',', '.'),
                     'Rp ' . number_format($sisa, 0, ',', '.'),
-                    $item->payment_status ?? '-'
+                    $item->payment_status ?? '-',
+                    $salesName
                 ];
             };
 
@@ -90,6 +93,7 @@ class InvoiceController extends Controller
                     'Rp ' . number_format($sumTagihan, 0, ',', '.'),
                     'Rp ' . number_format($sumTerbayar, 0, ',', '.'),
                     'Rp ' . number_format($sumSisa, 0, ',', '.'),
+                    '',
                     ''
                 ]
             ];
