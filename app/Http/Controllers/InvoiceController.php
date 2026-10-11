@@ -99,6 +99,7 @@ class InvoiceController extends Controller
             ];
 
             return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback', 'totals'));
+
         } elseif ($type == 'hutang') {
             $title = 'Laporan Hutang';
             $columns = ['No. Nota', 'Tanggal', 'Supplier', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Hutang', 'Status'];
@@ -153,6 +154,7 @@ class InvoiceController extends Controller
             ];
 
             return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback', 'totals'));
+
         } elseif ($type == 'stock-in' || $type == 'masuk') {
             $title = 'Laporan Data Barang Masuk';
             $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Supplier', 'Qty', 'Harga Beli', 'Total Harga'];
