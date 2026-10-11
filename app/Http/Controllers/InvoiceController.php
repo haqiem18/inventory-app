@@ -245,7 +245,7 @@ class InvoiceController extends Controller
             $sumTotalHarga = $records->sum(fn($i) => $i->subtotal ?? (($i->quantity ?? 0) * ($i->price ?? 0)));
 
             $totals = [
-                'colspan' => 5, // Dilewati sampai kolom Customer (No. Ref, Tanggal, Barang, Cabang, Customer)
+                'colspan' => 6, // Dilewati sampai kolom Customer (No. Ref, Tanggal, Barang, Cabang, Customer)
                 'values' => [
                     $sumQty,
                     '',                                    // Masuk ke kolom Qty
