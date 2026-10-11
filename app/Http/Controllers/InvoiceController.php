@@ -92,13 +92,13 @@ class InvoiceController extends Controller
             });
 
             $totals = [
-                'colspan' => 4,
+                'colspan' => 4, // Kolom 1 sampai 4 dilewati untuk label "Summary / Total:"
                 'values' => [
-                    'Rp ' . number_format($sumTagihan, 0, ',', '.'),
-                    'Rp ' . number_format($sumTerbayar, 0, ',', '.'),
-                    'Rp ' . number_format($sumSisa, 0, ',', '.'),
-                    '',
-                    ''
+                    'Rp ' . number_format($sumTagihan, 0, ',', '.'),   // Kolom 5: Total Tagihan
+                    'Rp ' . number_format($sumTerbayar, 0, ',', '.'), // Kolom 6: Terbayar
+                    'Rp ' . number_format($sumSisa, 0, ',', '.'),     // Kolom 7: Sisa Piutang
+                    '', // Kolom 8: Status (kosong)
+                    ''  // Kolom 9: Sales (kosong)
                 ]
             ];
 
