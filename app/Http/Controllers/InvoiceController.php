@@ -248,7 +248,7 @@ class InvoiceController extends Controller
                 'colspan' => 6, // Dilewati sampai kolom Customer (No. Ref, Tanggal, Barang, Cabang, Customer)
                 'values' => [
                     $sumQty,
-                    '',                                    // Masuk ke kolom Qty
+                                                        // Masuk ke kolom Qty
                     '',                                         // Kosong untuk kolom Harga Beli
                     '',                                         // Kosong untuk kolom Harga Jual
                     'Rp ' . number_format($sumTotalHarga, 0, ',', '.') // Masuk ke kolom Total
