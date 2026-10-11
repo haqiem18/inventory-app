@@ -47,22 +47,33 @@ class InvoiceController extends Controller
                     $item->payment_status ?? '-'
                 ];
             };
-            
+
             $records = $query->get();
             return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback'));
-
         } elseif ($type == 'hutang') {
             $title = 'Laporan Hutang';
             $columns = ['No. Nota', 'Tanggal', 'Supplier', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Hutang', 'Status'];
+
             $rowCallback = function ($item) {
-                $sisa = ($item->subtotal ?? 0) - ($item->paid_amount ?? 0);
+                $totalTagihan = $item->subtotal ?? $item->total ?? 0;
+
+                // Cek apakah ada field paid_amount, atau relasi pembayaran, atau fallback ke 0
+                $terbayar = $item->paid_amount ?? $item->total_paid ?? 0;
+
+                // Jika data terbayar kosong di stock_mutation, coba hitung dari relasi jika ada (misal pembayaran hutang)
+                if ($terbayar == 0 && method_exists($item, 'debtPayments')) {
+                    $terbayar = $item->debtPayments()->sum('amount') ?? 0;
+                }
+
+                $sisa = $totalTagihan - $terbayar;
+
                 return [
                     $item->reference_number ?? '-',
                     $item->mutation_date ?? '-',
                     $item->supplier->name ?? '-',
                     $item->product->name ?? '-',
-                    'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.'),
-                    'Rp ' . number_format($item->paid_amount ?? 0, 0, ',', '.'),
+                    'Rp ' . number_format($totalTagihan, 0, ',', '.'),
+                    'Rp ' . number_format($terbayar, 0, ',', '.'),
                     'Rp ' . number_format($sisa, 0, ',', '.'),
                     $item->payment_status ?? '-'
                 ];
@@ -70,9 +81,18 @@ class InvoiceController extends Controller
 
             // Ambil data untuk baris summary
             $records = $query->get();
-            $sumTagihan = $records->sum(fn($i) => $i->subtotal ?? 0);
-            $sumTerbayar = $records->sum(fn($i) => $i->paid_amount ?? 0);
-            $sumSisa = $sumTagihan - $sumTerbayar; // Diperbaiki tanpa karakter sisa git diff
+            $sumTagihan = $records->sum(fn($i) => $i->subtotal ?? $i->total ?? 0);
+
+            // Hitung total terbayar yang konsisten dengan rowCallback
+            $sumTerbayar = $records->sum(function ($i) {
+                $paid = $i->paid_amount ?? $i->total_paid ?? 0;
+                if ($paid == 0 && method_exists($i, 'debtPayments')) {
+                    $paid = $i->debtPayments()->sum('amount') ?? 0;
+                }
+                return $paid;
+            });
+
+            $sumSisa = $sumTagihan - $sumTerbayar;
 
             $totals = [
                 'colspan' => 5,
@@ -85,7 +105,6 @@ class InvoiceController extends Controller
             ];
 
             return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback', 'totals'));
-
         } elseif ($type == 'stock-in' || $type == 'masuk') {
             $title = 'Laporan Data Barang Masuk';
             $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Supplier', 'Qty', 'Harga Beli', 'Total Harga'];
@@ -110,10 +129,9 @@ class InvoiceController extends Controller
                     'Rp ' . number_format($item->subtotal ?? (($item->quantity ?? 0) * ($item->purchase_price ?? 0)), 0, ',', '.')
                 ];
             };
-            
+
             $records = $query->get();
             return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback'));
-
         } else {
             $title = 'Laporan Data Barang Keluar';
             $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Customer', 'Qty', 'Harga Jual', 'Total'];
@@ -138,7 +156,7 @@ class InvoiceController extends Controller
                     'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.')
                 ];
             };
-            
+
             $records = $query->get();
             return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback'));
         }
