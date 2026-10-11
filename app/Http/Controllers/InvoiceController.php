@@ -22,6 +22,7 @@ class InvoiceController extends Controller
 
         return view('invoices.print', compact('records', 'header', 'reference_number'));
     }
+
     public function printTable(Request $request)
     {
         $type = $request->query('type');
@@ -46,6 +47,10 @@ class InvoiceController extends Controller
                     $item->payment_status ?? '-'
                 ];
             };
+            
+            $records = $query->get();
+            return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback'));
+
         } elseif ($type == 'hutang') {
             $title = 'Laporan Hutang';
             $columns = ['No. Nota', 'Tanggal', 'Supplier', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Hutang', 'Status'];
@@ -62,11 +67,29 @@ class InvoiceController extends Controller
                     $item->payment_status ?? '-'
                 ];
             };
+
+            // Ambil data untuk baris summary
+            $records = $query->get();
+            $sumTagihan = $records->sum(fn($i) => $i->subtotal ?? 0);
+            $sumTerbayar = $records->sum(fn($i) => $i->paid_amount ?? 0);
+            $sumSisa = $sumTagihan - $sumTerbayar; // Diperbaiki tanpa karakter sisa git diff
+
+            $totals = [
+                'colspan' => 5,
+                'values' => [
+                    'Rp ' . number_format($sumTagihan, 0, ',', '.'),
+                    'Rp ' . number_format($sumTerbayar, 0, ',', '.'),
+                    'Rp ' . number_format($sumSisa, 0, ',', '.'),
+                    ''
+                ]
+            ];
+
+            return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback', 'totals'));
+
         } elseif ($type == 'stock-in' || $type == 'masuk') {
             $title = 'Laporan Data Barang Masuk';
             $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Supplier', 'Qty', 'Harga Beli', 'Total Harga'];
             $rowCallback = function ($item) {
-                // Menangani cabang baik berupa string, array, maupun objek relasi
                 $branchName = '-';
                 if (is_object($item->branch)) {
                     $branchName = $item->branch->name ?? '-';
@@ -87,6 +110,10 @@ class InvoiceController extends Controller
                     'Rp ' . number_format($item->subtotal ?? (($item->quantity ?? 0) * ($item->purchase_price ?? 0)), 0, ',', '.')
                 ];
             };
+            
+            $records = $query->get();
+            return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback'));
+
         } else {
             $title = 'Laporan Data Barang Keluar';
             $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Customer', 'Qty', 'Harga Jual', 'Total'];
@@ -111,10 +138,9 @@ class InvoiceController extends Controller
                     'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.')
                 ];
             };
+            
+            $records = $query->get();
+            return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback'));
         }
-
-        $records = $query->get();
-
-        return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback'));
     }
 }

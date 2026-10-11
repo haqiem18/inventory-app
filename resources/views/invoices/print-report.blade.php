@@ -11,7 +11,8 @@
         .header p { margin: 0; font-size: 11px; color: #666; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { background-color: #2c3e50; color: white; padding: 8px; text-align: left; border: 1px solid #2c3e50; }
-        td { padding: 6px 8px; border: 1px solid #ddd; }
+        td, th { border: 1px solid #ddd; }
+        td { padding: 6px 8px; }
         tr:nth-child(even) { background-color: #f9f9f9; }
         .signature { margin-top: 40px; float: right; text-align: right; }
         .no-print { margin-top: 20px; padding: 8px 16px; cursor: pointer; }
@@ -47,6 +48,18 @@
             </tr>
             @endforeach
         </tbody>
+        
+        {{-- Baris Total / Summary di bawah tabel --}}
+        @if(isset($totals))
+        <tfoot>
+            <tr style="background-color: #f2f2f2; font-weight: bold;">
+                <td colspan="{{ $totals['colspan'] }}" style="text-align: right; padding: 8px;">Summary / Total:</td>
+                @foreach($totals['values'] as $val)
+                    <td style="padding: 8px;">{{ $val }}</td>
+                @endforeach
+            </tr>
+        </tfoot>
+        @endif
     </table>
 
     <div class="signature">
