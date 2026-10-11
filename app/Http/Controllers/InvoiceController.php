@@ -31,28 +31,29 @@ class InvoiceController extends Controller
         // Ambil data murni berdasarkan array ID yang dikirim dari tombol cetak tanpa filter tambahan
         $query = StockMutation::whereIn('id', $ids);
 
-        if ($type == 'piutang') {
+        if  ($type == 'piutang') {
             $title = 'Laporan Piutang';
             $columns = ['No. Nota', 'Tanggal', 'Customer', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Piutang', 'Status', 'Sales'];
 
             $rowCallback = function ($item) {
-                // Mengambil total tagihan yang akurat untuk penjualan/piutang
-                $totalTagihan = $item->total ?? $item->subtotal ?? (($item->quantity ?? 0) * ($item->price ?? 0));
+                // Mengambil total tagihan secara akurat (biasanya dari subtotal transaksi / total tagihan penjualan)
+                $totalTagihan = $item->subtotal ?? $item->total ?? 0;
 
-                // Mengambil nilai terbayar
+                // Mengambil nilai terbayar dari relasi pembayaran piutang (misal: receivablePayments atau pembayaran terkait)
                 $terbayar = 0;
                 if (method_exists($item, 'receivablePayments')) {
                     $terbayar = $item->receivablePayments()->sum('amount_paid') ?? 0;
                 } elseif (method_exists($item, 'payments')) {
                     $terbayar = $item->payments()->sum('amount_paid') ?? 0;
                 }
+                
+                // Fallback jika menggunakan kolom langsung di tabel
                 if ($terbayar == 0) {
                     $terbayar = $item->paid_amount ?? 0;
                 }
 
                 $sisa = $totalTagihan - $terbayar;
 
-                // Mengambil nama customer dan sales dengan aman
                 $customerName = $item->customer->name ?? $item->nama_customer ?? '-';
                 $salesName = $item->sales->name ?? $item->sales_person ?? $item->sales ?? '-';
 
@@ -71,7 +72,7 @@ class InvoiceController extends Controller
 
             // Ambil data dan hitung baris summary untuk laporan piutang
             $records = $query->get();
-            $sumTagihan = $records->sum(fn($i) => $i->total ?? $i->subtotal ?? (($i->quantity ?? 0) * ($i->price ?? 0)));
+            $sumTagihan = $records->sum(fn($i) => $i->subtotal ?? $i->total ?? 0);
 
             $sumTerbayar = $records->sum(function ($i) {
                 $paid = 0;
@@ -89,7 +90,7 @@ class InvoiceController extends Controller
             $sumSisa = $sumTagihan - $sumTerbayar;
 
             $totals = [
-                'colspan' => 4, // Disesuaikan agar posisi label summary sejajar dengan kolom Nama Barang
+                'colspan' => 4,
                 'values' => [
                     'Rp ' . number_format($sumTagihan, 0, ',', '.'),
                     'Rp ' . number_format($sumTerbayar, 0, ',', '.'),
