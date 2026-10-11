@@ -36,9 +36,10 @@ class InvoiceController extends Controller
             $columns = ['No. Nota', 'Tanggal', 'Customer', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Piutang', 'Status', 'Sales'];
 
             $rowCallback = function ($item) {
-                $totalTagihan = $item->subtotal ?? $item->total ?? 0;
+                // Mengambil total tagihan yang akurat untuk penjualan/piutang
+                $totalTagihan = $item->total ?? $item->subtotal ?? (($item->quantity ?? 0) * ($item->price ?? 0));
 
-                // Mengambil nilai terbayar (menyesuaikan dengan tabel pembayaran atau paid_amount)
+                // Mengambil nilai terbayar
                 $terbayar = 0;
                 if (method_exists($item, 'receivablePayments')) {
                     $terbayar = $item->receivablePayments()->sum('amount_paid') ?? 0;
@@ -70,7 +71,7 @@ class InvoiceController extends Controller
 
             // Ambil data dan hitung baris summary untuk laporan piutang
             $records = $query->get();
-            $sumTagihan = $records->sum(fn($i) => $i->subtotal ?? $i->total ?? 0);
+            $sumTagihan = $records->sum(fn($i) => $i->total ?? $i->subtotal ?? (($i->quantity ?? 0) * ($i->price ?? 0)));
 
             $sumTerbayar = $records->sum(function ($i) {
                 $paid = 0;
@@ -88,7 +89,7 @@ class InvoiceController extends Controller
             $sumSisa = $sumTagihan - $sumTerbayar;
 
             $totals = [
-                'colspan' => 5,
+                'colspan' => 4, // Disesuaikan agar posisi label summary sejajar dengan kolom Nama Barang
                 'values' => [
                     'Rp ' . number_format($sumTagihan, 0, ',', '.'),
                     'Rp ' . number_format($sumTerbayar, 0, ',', '.'),
@@ -99,7 +100,6 @@ class InvoiceController extends Controller
             ];
 
             return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback', 'totals'));
-
         } elseif ($type == 'hutang') {
             $title = 'Laporan Hutang';
             $columns = ['No. Nota', 'Tanggal', 'Supplier', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Hutang', 'Status'];
