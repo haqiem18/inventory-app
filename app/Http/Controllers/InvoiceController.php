@@ -23,91 +23,98 @@ class InvoiceController extends Controller
         return view('invoices.print', compact('records', 'header', 'reference_number'));
     }
     public function printTable(Request $request)
-{
-    $type = $request->query('type');
-    $ids = $request->query('ids', []);
+    {
+        $type = $request->query('type');
+        $ids = $request->query('ids', []);
 
-    $query = StockMutation::whereIn('id', $ids);
+        // Ambil data murni berdasarkan array ID yang dikirim dari tombol cetak tanpa filter tambahan
+        $query = StockMutation::whereIn('id', $ids);
 
-    if ($type == 'piutang') {
-        // Piutang: Barang keluar dengan sub_type penjualan dan belum lunas
-        $query->where('type', 'OUT')
-              ->where('sub_type', 'penjualan')
-              ->where('payment_status', '!=', 'lunas');
+        if ($type == 'piutang') {
+            $title = 'Laporan Piutang';
+            $columns = ['No. Nota', 'Tanggal', 'Customer', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Piutang', 'Status'];
+            $rowCallback = function ($item) {
+                $sisa = ($item->subtotal ?? 0) - ($item->paid_amount ?? 0);
+                return [
+                    $item->reference_number ?? '-',
+                    $item->mutation_date ?? '-',
+                    $item->customer->name ?? '-',
+                    $item->product->name ?? '-',
+                    'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.'),
+                    'Rp ' . number_format($item->paid_amount ?? 0, 0, ',', '.'),
+                    'Rp ' . number_format($sisa, 0, ',', '.'),
+                    $item->payment_status ?? '-'
+                ];
+            };
+        } elseif ($type == 'hutang') {
+            $title = 'Laporan Hutang';
+            $columns = ['No. Nota', 'Tanggal', 'Supplier', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Hutang', 'Status'];
+            $rowCallback = function ($item) {
+                $sisa = ($item->subtotal ?? 0) - ($item->paid_amount ?? 0);
+                return [
+                    $item->reference_number ?? '-',
+                    $item->mutation_date ?? '-',
+                    $item->supplier->name ?? '-',
+                    $item->product->name ?? '-',
+                    'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.'),
+                    'Rp ' . number_format($item->paid_amount ?? 0, 0, ',', '.'),
+                    'Rp ' . number_format($sisa, 0, ',', '.'),
+                    $item->payment_status ?? '-'
+                ];
+            };
+        } elseif ($type == 'stock-in' || $type == 'barang-masuk') {
+            $title = 'Laporan Data Barang Masuk';
+            $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Supplier', 'Qty', 'Harga Beli', 'Total Harga'];
+            $rowCallback = function ($item) {
+                // Menangani cabang baik berupa string, array, maupun objek relasi
+                $branchName = '-';
+                if (is_object($item->branch)) {
+                    $branchName = $item->branch->name ?? '-';
+                } elseif (is_array($item->branch)) {
+                    $branchName = $item->branch['name'] ?? '-';
+                } else {
+                    $branchName = $item->branch ?? '-';
+                }
 
-        $title = 'Laporan Piutang';
-        $columns = ['No. Nota', 'Tanggal', 'Customer', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Piutang', 'Status'];
-        $rowCallback = function ($item) {
-            $sisa = ($item->subtotal ?? 0) - ($item->paid_amount ?? 0);
-            return [
-                $item->reference_number ?? '-',
-                $item->mutation_date ?? '-',
-                $item->customer->name ?? '-',
-                $item->product->name ?? '-',
-                'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.'),
-                'Rp ' . number_format($item->paid_amount ?? 0, 0, ',', '.'),
-                'Rp ' . number_format($sisa, 0, ',', '.'),
-                $item->payment_status ?? '-'
-            ];
-        };
-    } elseif ($type == 'hutang') {
-        // Hutang: Barang masuk dan belum lunas
-        $query->where('type', 'Masuk')
-              ->where('payment_status', '!=', 'lunas');
+                return [
+                    $item->reference_number ?? '-',
+                    $item->mutation_date ?? '-',
+                    $item->product->name ?? $item->nama_barang ?? '-',
+                    $branchName,
+                    $item->supplier->name ?? '-',
+                    $item->quantity ?? 0,
+                    'Rp ' . number_format($item->purchase_price ?? 0, 0, ',', '.'),
+                    'Rp ' . number_format($item->subtotal ?? (($item->quantity ?? 0) * ($item->purchase_price ?? 0)), 0, ',', '.')
+                ];
+            };
+        } else {
+            $title = 'Laporan Data Barang Keluar';
+            $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Customer', 'Qty', 'Harga Jual', 'Total'];
+            $rowCallback = function ($item) {
+                $branchName = '-';
+                if (is_object($item->branch)) {
+                    $branchName = $item->branch->name ?? '-';
+                } elseif (is_array($item->branch)) {
+                    $branchName = $item->branch['name'] ?? '-';
+                } else {
+                    $branchName = $item->branch ?? '-';
+                }
 
-        $title = 'Laporan Hutang';
-        $columns = ['No. Nota', 'Tanggal', 'Supplier', 'Nama Barang', 'Total Tagihan', 'Terbayar', 'Sisa Hutang', 'Status'];
-        $rowCallback = function ($item) {
-            $sisa = ($item->subtotal ?? 0) - ($item->paid_amount ?? 0);
-            return [
-                $item->reference_number ?? '-',
-                $item->mutation_date ?? '-',
-                $item->supplier->name ?? '-',
-                $item->product->name ?? '-',
-                'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.'),
-                'Rp ' . number_format($item->paid_amount ?? 0, 0, ',', '.'),
-                'Rp ' . number_format($sisa, 0, ',', '.'),
-                $item->payment_status ?? '-'
-            ];
-        };
-    } elseif ($type == 'stock-in' || $type == 'barang-masuk') {
-        $query->where('type', 'Masuk');
+                return [
+                    $item->reference_number ?? '-',
+                    $item->mutation_date ?? '-',
+                    $item->product->name ?? $item->nama_barang ?? '-',
+                    $branchName,
+                    $item->customer->name ?? '-',
+                    $item->quantity ?? 0,
+                    'Rp ' . number_format($item->price ?? 0, 0, ',', '.'),
+                    'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.')
+                ];
+            };
+        }
 
-        $title = 'Laporan Data Barang Masuk';
-        $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Supplier', 'Qty', 'Harga Beli', 'Total Harga'];
-        $rowCallback = function ($item) {
-            return [
-                $item->reference_number ?? '-',
-                $item->mutation_date ?? '-',
-                $item->product->name ?? '-',
-                $item->branch ?? '-',
-                $item->supplier->name ?? '-',
-                $item->quantity ?? 0,
-                'Rp ' . number_format($item->purchase_price ?? 0, 0, ',', '.'),
-                'Rp ' . number_format($item->subtotal ?? (($item->quantity ?? 0) * ($item->purchase_price ?? 0)), 0, ',', '.')
-            ];
-        };
-    } else {
-        $query->where('type', 'OUT');
+        $records = $query->get();
 
-        $title = 'Laporan Data Barang Keluar';
-        $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Customer', 'Qty', 'Harga Jual', 'Total'];
-        $rowCallback = function ($item) {
-            return [
-                $item->reference_number ?? '-',
-                $item->mutation_date ?? '-',
-                $item->product->name ?? '-',
-                $item->branch ?? '-',
-                $item->customer->name ?? '-',
-                $item->quantity ?? 0,
-                'Rp ' . number_format($item->price ?? 0, 0, ',', '.'),
-                'Rp ' . number_format($item->subtotal ?? 0, 0, ',', '.')
-            ];
-        };
+        return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback'));
     }
-
-$records = $query->get();
-
-return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback'));
-}
 }
