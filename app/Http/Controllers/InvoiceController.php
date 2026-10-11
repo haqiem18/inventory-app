@@ -198,11 +198,11 @@ class InvoiceController extends Controller
             $sumTotalHarga = $records->sum(fn($i) => $i->subtotal ?? (($i->quantity ?? 0) * ($i->purchase_price ?? 0)));
 
             $totals = [
-                'colspan' => 5, // Disesuaikan dengan jumlah kolom sebelum Qty (No. Ref, Tanggal, Barang, Cabang, Supplier)
+                'colspan' => 6, // Mengatur jumlah kolom yang dilewati sebelum kolom Qty
                 'values' => [
-                    $sumQty,                                    // Total Qty
-                    '',                                         // Kosong untuk kolom Harga Beli
-                    'Rp ' . number_format($sumTotalHarga, 0, ',', '.') // Total Harga Keseluruhan
+                    $sumQty,                                    // Masuk ke kolom Qty
+                    '',                                         // Masuk ke kolom Harga Beli (dikosongkan)
+                    'Rp ' . number_format($sumTotalHarga, 0, ',', '.') // Masuk ke kolom Total Harga
                 ]
             ];
 
