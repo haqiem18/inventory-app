@@ -2,18 +2,16 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InvoiceController;
-use App\Models\StockMutation;
+use Illuminate\Http\Request;
 
 Route::get('/admin/invoice/print/{reference_number}', [InvoiceController::class, 'print'])
     ->name('invoice.print')
     ->middleware(['auth']); // Pastikan hanya yang sudah login yang bisa akses
 
-Route::get('/print-table', function (Illuminate\Http\Request $request) {
-    $ids = $request->query('ids');
-    $records = StockMutation::whereIn('id', $ids)->get();
-    
-    return view('invoices.print-table', compact('records'));
-})->name('print.table');
+// Gunakan satu rute ini saja yang mengarah ke Controller
+Route::get('/print-table', [InvoiceController::class, 'printTable'])
+    ->name('print.table')
+    ->middleware(['auth']);
 
 Route::get('/', function () {
     return view('welcome');
