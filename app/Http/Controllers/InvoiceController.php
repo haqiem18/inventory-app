@@ -62,7 +62,7 @@ class InvoiceController extends Controller
                     $item->payment_status ?? '-'
                 ];
             };
-        } elseif ($type == 'stock-in' || $type == 'barang-masuk') {
+        } elseif ($type == 'stock-in' || $type == 'masuk') {
             $title = 'Laporan Data Barang Masuk';
             $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Supplier', 'Qty', 'Harga Beli', 'Total Harga'];
             $rowCallback = function ($item) {

@@ -35,7 +35,7 @@ class ManageStockOuts extends ManageRecords
                     $records = $query->get();
 
                     return redirect()->route('print.table', [
-                        'type' => 'stock-out',
+                        'type' => 'OUT',
                         'ids' => $records->pluck('id')->toArray()
                     ]);
                 }),

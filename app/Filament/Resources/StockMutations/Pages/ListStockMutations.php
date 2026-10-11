@@ -33,7 +33,7 @@ class ListStockMutations extends ListRecords
                     $records = $query->get();
 
                     return redirect()->route('print.table', [
-                        'type' => 'OUT',
+                        'type' => 'masuk',
                         'ids' => $records->pluck('id')->toArray()
                     ]);
                 }),
