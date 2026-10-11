@@ -248,7 +248,7 @@ class InvoiceController extends Controller
                 'colspan' => 6, // Dilewati sampai kolom Customer (No. Ref, Tanggal, Barang, Cabang, Customer)
                 'values' => [
                     $sumQty,
-                                                        // Masuk ke kolom Qty
+                    // Masuk ke kolom Qty
                     '',                                         // Kosong untuk kolom Harga Beli
                     '',                                         // Kosong untuk kolom Harga Jual
                     'Rp ' . number_format($sumTotalHarga, 0, ',', '.') // Masuk ke kolom Total
@@ -257,5 +257,29 @@ class InvoiceController extends Controller
 
             return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback', 'totals'));
         }
+    }
+
+    public function printSuratJalan(Request $request)
+    {
+        // Bisa berdasarkan ids atau reference_number
+        $ids = $request->input('ids', []);
+        $reference = $request->input('ref');
+
+        $query = \App\Models\StockMutation::with(['product', 'customer', 'branch']);
+
+        if (!empty($ids)) {
+            $query->whereIn('id', $ids);
+        } elseif ($reference) {
+            $query->where('reference_number', $reference);
+        } else {
+            $query->where('sub_type', 'penjualan')->latest()->take(10);
+        }
+
+        $records = $query->get();
+        $firstRecord = $records->first();
+
+        $title = 'SURAT JALAN';
+
+        return view('invoices.print-surat-jalan', compact('title', 'records', 'firstRecord'));
     }
 }

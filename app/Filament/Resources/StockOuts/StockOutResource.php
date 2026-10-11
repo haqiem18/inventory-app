@@ -84,8 +84,8 @@ class StockOutResource extends Resource
                     ->searchable()
                     ->preload()
                     ->live()
-                    ->default(fn () => Auth::user()->role === 'admin_cabang' ? Auth::user()->branch_id : null)
-                    ->disabled(fn () => Auth::user()->role === 'admin_cabang')
+                    ->default(fn() => Auth::user()->role === 'admin_cabang' ? Auth::user()->branch_id : null)
+                    ->disabled(fn() => Auth::user()->role === 'admin_cabang')
                     ->dehydrated(true),
 
                 Select::make('to_branch_id')
@@ -205,7 +205,7 @@ class StockOutResource extends Resource
                     ->summarize(
                         Sum::make()
                             ->label('Total Qty')
-                            ->using(fn ($query) => $query->sum('quantity'))
+                            ->using(fn($query) => $query->sum('quantity'))
                     ),
 
                 TextColumn::make('purchase_price')
@@ -227,7 +227,7 @@ class StockOutResource extends Resource
                     ->summarize(
                         Sum::make()
                             ->label('Grand Total')
-                            ->using(fn ($query) => $query->sum('subtotal'))
+                            ->using(fn($query) => $query->sum('subtotal'))
                             ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.'))
                     )
                     ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
@@ -288,6 +288,14 @@ class StockOutResource extends Resource
                     ->url(fn($record) => route('invoice.print', ['reference_number' => $record->reference_number]))
                     ->openUrlInNewTab(),
 
+                // Tombol Cetak Surat Jalan Per Baris
+                Action::make('cetak_surat_jalan')
+                    ->label('Surat Jalan')
+                    ->icon('heroicon-o-document-text')
+                    ->color('success')
+                    ->url(fn($record) => route('print.surat.jalan', ['ref' => $record->reference_number]))
+                    ->openUrlInNewTab(),
+
                 Action::make('Accept')
                     ->icon('heroicon-o-check-circle')
                     ->color('warning')
@@ -324,6 +332,18 @@ class StockOutResource extends Resource
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+
+                    // Tombol Bulk Cetak Surat Jalan Terpilih
+                    \Filament\Tables\Actions\BulkAction::make('bulk_surat_jalan')
+                        ->label('Cetak Surat Jalan Terpilih')
+                        ->icon('heroicon-o-document-text')
+                        ->color('success')
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            $ids = $records->pluck('id')->toArray();
+                            return redirect()->route('print.surat.jalan', ['ids' => $ids]);
+                        })
+                        ->deselectRecordsAfterCompletion()
+                        ->openUrlInNewTab(),
                 ]),
             ]);
     }

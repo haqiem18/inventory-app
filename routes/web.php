@@ -13,6 +13,7 @@ Route::get('/print-table', [InvoiceController::class, 'printTable'])
     ->name('print.table')
     ->middleware(['auth']);
 
+Route::get('/print-surat-jalan', [InvoiceController::class, 'printSuratJalan'])->name('print.surat.jalan');
 Route::get('/', function () {
     return view('welcome');
 });
