@@ -101,6 +101,7 @@ class InvoiceController extends Controller
             $totals = [
                 'colspan' => 4,
                 'values' => [
+                    '',
                     'Rp ' . number_format($sumTagihan, 0, ',', '.'),
                     'Rp ' . number_format($sumTerbayar, 0, ',', '.'),
                     'Rp ' . number_format($sumSisa, 0, ',', '.'),
