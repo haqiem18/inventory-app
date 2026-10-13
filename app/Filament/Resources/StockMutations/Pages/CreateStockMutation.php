@@ -12,27 +12,26 @@ class CreateStockMutation extends CreateRecord
 {
     protected static string $resource = StockMutationResource::class;
 
-    protected function mutateFormDataBeforeCreate(array $data): array
+    protected function handleRecordCreation(array $data): StockMutation
     {
-        // Tangkap repeater dari berbagai kemungkinan key
-        $items = $data['items'] ?? $data['stock_mutation_items'] ?? [];
-        
+        $items = $data['items'] ?? [];
+
         if (empty($items)) {
             throw new Exception('Daftar barang (items) pada repeater tidak boleh kosong.');
         }
 
-        // Ambil item pertama dari repeater
+        // Ambil item pertama untuk baris utama
         $firstItem = array_shift($items);
-
-        // Cari harga beli dari key apa pun yang mungkin dikirim form
-        $priceFirst = $firstItem['purchase_price'] ?? $firstItem['price'] ?? $firstItem['unit_price'] ?? 0;
-        $qtyFirst = $firstItem['quantity'] ?? $firstItem['qty'] ?? 1;
+        
+        $qtyFirst = $firstItem['quantity'] ?? 1;
+        $priceFirst = $firstItem['purchase_price'] ?? 0;
         $subtotalFirst = $qtyFirst * $priceFirst;
 
+        // Siapkan data untuk record utama
         $data['product_id']     = $firstItem['product_id'] ?? null;
         $data['quantity']       = $qtyFirst;
-        $data['purchase_price'] = $priceFirst; // Simpan ke harga beli
-        $data['price']          = 0;           // Harga jual dikosongkan
+        $data['purchase_price'] = $priceFirst;
+        $data['price']          = 0; // Harga jual dikosongkan untuk barang masuk
         $data['subtotal']       = $subtotalFirst;
         $data['paid_amount']    = (($data['payment_status'] ?? '') === 'lunas') ? $subtotalFirst : 0;
         $data['notes']          = $firstItem['notes'] ?? null;
@@ -40,32 +39,31 @@ class CreateStockMutation extends CreateRecord
         $data['type']           = 'Masuk';
 
         unset($data['items']);
-        unset($data['stock_mutation_items']);
 
-        // Jika ada sisa item di repeater, simpan secara transaksional
-        if (!empty($items)) {
-            DB::transaction(function () use ($items, $data) {
-                foreach ($items as $item) {
-                    $price = $item['purchase_price'] ?? $item['price'] ?? $item['unit_price'] ?? 0;
-                    $qty = $item['quantity'] ?? $item['qty'] ?? 1;
-                    $subtotal = $qty * $price;
+        // Gunakan transaksi database untuk menyimpan record utama dan sisa item repeater
+        return DB::transaction(function () use ($data, $items) {
+            $record = static::getModel()::create($data);
 
-                    $extraData = array_merge($data, [
-                        'product_id'     => $item['product_id'] ?? null,
-                        'quantity'       => $qty,
-                        'purchase_price' => $price,
-                        'price'          => 0,
-                        'subtotal'       => $subtotal,
-                        'paid_amount'    => (($data['payment_status'] ?? '') === 'lunas') ? $subtotal : 0,
-                        'notes'          => $item['notes'] ?? null,
-                    ]);
+            // Jika ada lebih dari 1 item di repeater, buat record tambahan
+            foreach ($items as $item) {
+                $qty = $item['quantity'] ?? 1;
+                $price = $item['purchase_price'] ?? 0;
+                $subtotal = $qty * $price;
 
-                    StockMutation::create($extraData);
-                }
-            });
-        }
+                $extraData = $data;
+                $extraData['product_id']     = $item['product_id'] ?? null;
+                $extraData['quantity']       = $qty;
+                $extraData['purchase_price'] = $price;
+                $extraData['price']          = 0;
+                $extraData['subtotal']       = $subtotal;
+                $extraData['paid_amount']    = (($data['payment_status'] ?? '') === 'lunas') ? $subtotal : 0;
+                $extraData['notes']          = $item['notes'] ?? null;
 
-        return $data;
+                static::getModel()::create($extraData);
+            }
+
+            return $record;
+        });
     }
 
     protected function getRedirectUrl(): string
