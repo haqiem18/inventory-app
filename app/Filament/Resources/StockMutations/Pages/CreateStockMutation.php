@@ -14,9 +14,9 @@ class CreateStockMutation extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $items = $data['items'] ?? [];
-        unset($data['items']);
-
+        // Tangkap repeater dari berbagai kemungkinan key
+        $items = $data['items'] ?? $data['stock_mutation_items'] ?? [];
+        
         if (empty($items)) {
             throw new Exception('Daftar barang (items) pada repeater tidak boleh kosong.');
         }
@@ -24,28 +24,31 @@ class CreateStockMutation extends CreateRecord
         // Ambil item pertama dari repeater
         $firstItem = array_shift($items);
 
-        // Ambil harga dari purchase_price yang diinput user di repeater
-        $priceFirst = $firstItem['purchase_price'] ?? $firstItem['price'] ?? 0;
-        $qtyFirst = $firstItem['quantity'] ?? 0;
-        $subtotalFirst = $qtyFirst * $priceFirst; // Perbaikan: tambahkan operator *
+        // Cari harga beli dari key apa pun yang mungkin dikirim form
+        $priceFirst = $firstItem['purchase_price'] ?? $firstItem['price'] ?? $firstItem['unit_price'] ?? 0;
+        $qtyFirst = $firstItem['quantity'] ?? $firstItem['qty'] ?? 1;
+        $subtotalFirst = $qtyFirst * $priceFirst;
 
         $data['product_id']     = $firstItem['product_id'] ?? null;
         $data['quantity']       = $qtyFirst;
-        $data['purchase_price'] = $priceFirst;
-        $data['price']          = 0; // Kosongkan atau isi harga jual jika ada
+        $data['purchase_price'] = $priceFirst; // Simpan ke harga beli
+        $data['price']          = 0;           // Harga jual dikosongkan
         $data['subtotal']       = $subtotalFirst;
-        $data['paid_amount']    = ($data['payment_status'] === 'lunas') ? $subtotalFirst : 0;
+        $data['paid_amount']    = (($data['payment_status'] ?? '') === 'lunas') ? $subtotalFirst : 0;
         $data['notes']          = $firstItem['notes'] ?? null;
         $data['status']         = 'PENDING';
         $data['type']           = 'Masuk';
+
+        unset($data['items']);
+        unset($data['stock_mutation_items']);
 
         // Jika ada sisa item di repeater, simpan secara transaksional
         if (!empty($items)) {
             DB::transaction(function () use ($items, $data) {
                 foreach ($items as $item) {
-                    $price = $item['purchase_price'] ?? $item['price'] ?? 0;
-                    $qty = $item['quantity'] ?? 0;
-                    $subtotal = $qty * $price; // Perbaikan: tambahkan operator *
+                    $price = $item['purchase_price'] ?? $item['price'] ?? $item['unit_price'] ?? 0;
+                    $qty = $item['quantity'] ?? $item['qty'] ?? 1;
+                    $subtotal = $qty * $price;
 
                     $extraData = array_merge($data, [
                         'product_id'     => $item['product_id'] ?? null,
@@ -53,7 +56,7 @@ class CreateStockMutation extends CreateRecord
                         'purchase_price' => $price,
                         'price'          => 0,
                         'subtotal'       => $subtotal,
-                        'paid_amount'    => ($data['payment_status'] === 'lunas') ? $subtotal : 0,
+                        'paid_amount'    => (($data['payment_status'] ?? '') === 'lunas') ? $subtotal : 0,
                         'notes'          => $item['notes'] ?? null,
                     ]);
 
