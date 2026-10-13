@@ -14,6 +14,7 @@ class CreateStockMutation extends CreateRecord
 
     protected function handleRecordCreation(array $data): StockMutation
     {
+        dd($data['items'] ?? 'Items kosong atau key berbeda', $data);
         $items = $data['items'] ?? [];
 
         if (empty($items)) {
@@ -22,7 +23,7 @@ class CreateStockMutation extends CreateRecord
 
         // Ambil item pertama untuk baris utama
         $firstItem = array_shift($items);
-        
+
         $qtyFirst = $firstItem['quantity'] ?? 1;
         $priceFirst = $firstItem['purchase_price'] ?? 0;
         $subtotalFirst = $qtyFirst * $priceFirst;
