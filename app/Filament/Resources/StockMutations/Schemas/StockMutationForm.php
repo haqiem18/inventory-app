@@ -9,7 +9,6 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Group;
 use Filament\Forms\Get;
 
 class StockMutationForm
@@ -18,52 +17,49 @@ class StockMutationForm
     {
         return $schema
             ->components([
-                // --- INFORMASI UTAMA FAKTUR (HEADER) ---
-                Group::make()->schema([
-                    TextInput::make('reference_number')
-                        ->label('No. Referensi / Nota')
-                        ->required()
-                        ->default(fn() => 'JB-IN-'. strtoupper(bin2hex(random_bytes(2))))
-                        ->unique(ignoreRecord: true),
+                TextInput::make('reference_number')
+                    ->label('No. Referensi / Nota')
+                    ->required()
+                    ->default(fn() => 'JB-IN-'. strtoupper(bin2hex(random_bytes(2))))
+                    ->unique(ignoreRecord: true),
 
-                    DatePicker::make('mutation_date')
-                        ->label('Tanggal Masuk')
-                        ->required()
-                        ->default(now()),
+                DatePicker::make('mutation_date')
+                    ->label('Tanggal Masuk')
+                    ->required()
+                    ->default(now()),
 
-                    Select::make('branch_id')
-                        ->label('Tujuan Cabang')
-                        ->relationship('branch', 'name')
-                        ->searchable()
-                        ->preload()
-                        ->required(),
+                Select::make('branch_id')
+                    ->label('Tujuan Cabang')
+                    ->relationship('branch', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
 
-                    Select::make('supplier_id')
-                        ->label('Supplier')
-                        ->relationship('supplier', 'name')
-                        ->searchable()
-                        ->preload()
-                        ->required(),
+                Select::make('supplier_id')
+                    ->label('Supplier')
+                    ->relationship('supplier', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
 
-                    Select::make('transaction_type')
-                        ->label('Tipe Transaksi')
-                        ->options([
-                            'pembelian' => 'Pembelian',
-                            'mutasi' => 'Mutasi Antar Cabang',
-                        ])
-                        ->default('pembelian')
-                        ->required()
-                        ->live(),
+                Select::make('transaction_type')
+                    ->label('Tipe Transaksi')
+                    ->options([
+                        'pembelian' => 'Pembelian',
+                        'mutasi' => 'Mutasi Antar Cabang',
+                    ])
+                    ->default('pembelian')
+                    ->required()
+                    ->live(),
 
-                    Select::make('payment_status')
-                        ->label('Status Pembayaran')
-                        ->options([
-                            'lunas' => 'Lunas',
-                            'hutang' => 'Hutang',
-                        ])
-                        ->visible(fn(Get $get) => $get('transaction_type') === 'pembelian')
-                        ->required(fn(Get $get) => $get('transaction_type') === 'pembelian'),
-                ])->columns(2),
+                Select::make('payment_status')
+                    ->label('Status Pembayaran')
+                    ->options([
+                        'lunas' => 'Lunas',
+                        'hutang' => 'Hutang',
+                    ])
+                    ->visible(fn(Get $get) => $get('transaction_type') === 'pembelian')
+                    ->required(fn(Get $get) => $get('transaction_type') === 'pembelian'),
 
                 Hidden::make('type')
                     ->default('Masuk'),
@@ -103,6 +99,7 @@ class StockMutationForm
                     ->defaultItems(1)
                     ->required()
                     ->columnSpanFull(),
-            ]);
+            ])
+            ->columns(2);
     }
 }
