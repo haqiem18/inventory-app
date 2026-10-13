@@ -27,12 +27,12 @@ class CreateStockMutation extends CreateRecord
         // Ambil harga dari purchase_price yang diinput user di repeater
         $priceFirst = $firstItem['purchase_price'] ?? $firstItem['price'] ?? 0;
         $qtyFirst = $firstItem['quantity'] ?? 0;
-        $subtotalFirst = $qtyFirst * $priceFirst;
+        $subtotalFirst = $qtyFirst * $priceFirst; // Perbaikan: tambahkan operator *
 
         $data['product_id']     = $firstItem['product_id'] ?? null;
         $data['quantity']       = $qtyFirst;
         $data['purchase_price'] = $priceFirst;
-        $data['price']          = $priceFirst;
+        $data['price']          = 0; // Kosongkan atau isi harga jual jika ada
         $data['subtotal']       = $subtotalFirst;
         $data['paid_amount']    = ($data['payment_status'] === 'lunas') ? $subtotalFirst : 0;
         $data['notes']          = $firstItem['notes'] ?? null;
@@ -45,13 +45,13 @@ class CreateStockMutation extends CreateRecord
                 foreach ($items as $item) {
                     $price = $item['purchase_price'] ?? $item['price'] ?? 0;
                     $qty = $item['quantity'] ?? 0;
-                    $subtotal = $qty * $price;
+                    $subtotal = $qty * $price; // Perbaikan: tambahkan operator *
 
                     $extraData = array_merge($data, [
                         'product_id'     => $item['product_id'] ?? null,
                         'quantity'       => $qty,
                         'purchase_price' => $price,
-                        'price'          => $price,
+                        'price'          => 0,
                         'subtotal'       => $subtotal,
                         'paid_amount'    => ($data['payment_status'] === 'lunas') ? $subtotal : 0,
                         'notes'          => $item['notes'] ?? null,
