@@ -5,7 +5,6 @@ namespace App\Filament\Resources\StockMutations\Pages;
 use App\Filament\Resources\StockMutations\StockMutationResource;
 use App\Models\StockMutation;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -13,49 +12,49 @@ class CreateStockMutation extends CreateRecord
 {
     protected static string $resource = StockMutationResource::class;
 
-    // Ambil alih proses create sepenuhnya agar tidak melakukan insert data kosong di level root
-    protected function handleRecordCreation(array $data): Model
+    protected function mutateFormDataBeforeCreate(array $data): array
     {
         $items = $data['items'] ?? [];
-        
+        unset($data['items']);
+
         if (empty($items)) {
             throw new Exception('Daftar barang (items) pada repeater tidak boleh kosong.');
         }
 
-        // Siapkan data header / utama yang sama untuk setiap baris barang
-        $baseData = [
-            'reference_number' => $data['reference_number'] ?? null,
-            'mutation_date'    => $data['mutation_date'] ?? now(),
-            'branch_id'        => $data['branch_id'] ?? null,
-            'supplier_id'      => $data['supplier_id'] ?? null,
-            'transaction_type' => $data['transaction_type'] ?? 'pembelian',
-            'payment_status'   => $data['payment_status'] ?? 'lunas',
-            'type'             => 'Masuk',
-            'status'           => 'PENDING',
-        ];
+        // Ambil item pertama untuk disematkan ke record utama agar lolos validasi create Filament
+        $firstItem = array_shift($items);
+        $subtotalFirst = ($firstItem['quantity'] ?? 0) * ($firstItem['purchase_price'] ?? 0);
 
-        $createdRecord = null;
+        $data['product_id']     = $firstItem['product_id'];
+        $data['quantity']       = $firstItem['quantity'];
+        $data['purchase_price'] = $firstItem['purchase_price'];
+        $data['subtotal']       = $subtotalFirst;
+        $data['paid_amount']    = ($data['payment_status'] === 'lunas') ? $subtotalFirst : 0;
+        $data['notes']          = $firstItem['notes'] ?? null;
+        $data['status']         = 'PENDING';
+        $data['type']           = 'Masuk';
 
-        // Simpan setiap baris item dari repeater ke dalam database secara transaksional
-        DB::transaction(function () use ($items, $baseData, &$createdRecord) {
-            foreach ($items as $item) {
-                $subtotal = ($item['quantity'] ?? 0) * ($item['purchase_price'] ?? 0);
-                
-                $mutationData = array_merge($baseData, [
-                    'product_id'     => $item['product_id'],
-                    'quantity'       => $item['quantity'],
-                    'purchase_price' => $item['purchase_price'],
-                    'subtotal'       => $subtotal,
-                    'paid_amount'    => ($baseData['payment_status'] === 'lunas') ? $subtotal : 0,
-                    'notes'          => $item['notes'] ?? null,
-                ]);
+        // Jika ada sisa item di repeater, simpan secara transaksional di database
+        if (!empty($items)) {
+            DB::transaction(function () use ($items, $data) {
+                foreach ($items as $item) {
+                    $subtotal = ($item['quantity'] ?? 0) * ($item['purchase_price'] ?? 0);
+                    
+                    $extraData = array_merge($data, [
+                        'product_id'     => $item['product_id'],
+                        'quantity'       => $item['quantity'],
+                        'purchase_price' => $item['purchase_price'],
+                        'subtotal'       => $subtotal,
+                        'paid_amount'    => ($data['payment_status'] === 'lunas') ? $subtotal : 0,
+                        'notes'          => $item['notes'] ?? null,
+                    ]);
 
-                $createdRecord = StockMutation::create($mutationData);
-            }
-        });
+                    StockMutation::create($extraData);
+                }
+            });
+        }
 
-        // Kembalikan record terakhir agar Filament bisa melakukan redirect dengan benar
-        return $createdRecord;
+        return $data;
     }
 
     protected function getRedirectUrl(): string
