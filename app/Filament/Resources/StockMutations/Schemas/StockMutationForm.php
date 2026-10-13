@@ -9,7 +9,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Get;
 
 class StockMutationForm
@@ -19,7 +19,7 @@ class StockMutationForm
         return $schema
             ->components([
                 // --- INFORMASI UTAMA FAKTUR (HEADER) ---
-                Grid::make(2)->schema([
+                Group::make()->schema([
                     TextInput::make('reference_number')
                         ->label('No. Referensi / Nota')
                         ->required()
@@ -63,7 +63,7 @@ class StockMutationForm
                         ])
                         ->visible(fn(Get $get) => $get('transaction_type') === 'pembelian')
                         ->required(fn(Get $get) => $get('transaction_type') === 'pembelian'),
-                ]),
+                ])->columns(2),
 
                 Hidden::make('type')
                     ->default('Masuk'),
