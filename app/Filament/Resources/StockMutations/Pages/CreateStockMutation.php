@@ -21,31 +21,37 @@ class CreateStockMutation extends CreateRecord
             throw new Exception('Daftar barang (items) pada repeater tidak boleh kosong.');
         }
 
-        // Ambil item pertama untuk data utama
+        // Ambil item pertama dari repeater
         $firstItem = array_shift($items);
-        $subtotalFirst = ($firstItem['quantity'] ?? 0) * ($firstItem['purchase_price'] ?? 0);
 
-        $data['product_id']     = $firstItem['product_id'];
-        $data['quantity']       = $firstItem['quantity'];
-        $data['purchase_price'] = $firstItem['purchase_price'];
-        $data['price']          = $firstItem['purchase_price']; // Isi kolom price juga
+        // Ambil harga dari purchase_price yang diinput user di repeater
+        $priceFirst = $firstItem['purchase_price'] ?? $firstItem['price'] ?? 0;
+        $qtyFirst = $firstItem['quantity'] ?? 0;
+        $subtotalFirst = $qtyFirst * $priceFirst;
+
+        $data['product_id']     = $firstItem['product_id'] ?? null;
+        $data['quantity']       = $qtyFirst;
+        $data['purchase_price'] = $priceFirst;
+        $data['price']          = $priceFirst;
         $data['subtotal']       = $subtotalFirst;
         $data['paid_amount']    = ($data['payment_status'] === 'lunas') ? $subtotalFirst : 0;
         $data['notes']          = $firstItem['notes'] ?? null;
         $data['status']         = 'PENDING';
         $data['type']           = 'Masuk';
 
-        // Simpan sisa item repeater secara manual
+        // Jika ada sisa item di repeater, simpan secara transaksional
         if (!empty($items)) {
             DB::transaction(function () use ($items, $data) {
                 foreach ($items as $item) {
-                    $subtotal = ($item['quantity'] ?? 0) * ($item['purchase_price'] ?? 0);
-                    
+                    $price = $item['purchase_price'] ?? $item['price'] ?? 0;
+                    $qty = $item['quantity'] ?? 0;
+                    $subtotal = $qty * $price;
+
                     $extraData = array_merge($data, [
-                        'product_id'     => $item['product_id'],
-                        'quantity'       => $item['quantity'],
-                        'purchase_price' => $item['purchase_price'],
-                        'price'          => $item['purchase_price'], // Isi kolom price juga
+                        'product_id'     => $item['product_id'] ?? null,
+                        'quantity'       => $qty,
+                        'purchase_price' => $price,
+                        'price'          => $price,
                         'subtotal'       => $subtotal,
                         'paid_amount'    => ($data['payment_status'] === 'lunas') ? $subtotal : 0,
                         'notes'          => $item['notes'] ?? null,
