@@ -9,7 +9,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Get;
+use Filament\Schemas\Components\Utilities\Get;
 
 class StockMutationForm
 {
