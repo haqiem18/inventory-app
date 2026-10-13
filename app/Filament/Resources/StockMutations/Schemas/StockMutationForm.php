@@ -1,105 +1,71 @@
 <?php
 
-namespace App\Filament\Resources\StockMutations\Schemas;
+namespace App\Filament\Resources\StockMutations\Pages;
 
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Repeater;
-use Filament\Schemas\Components\Utilities\Get;
+use App\Filament\Resources\StockMutations\StockMutationResource;
+use App\Models\StockMutation;
+use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Database\Eloquent\Model;
 
-class StockMutationForm
+class CreateStockMutation extends CreateRecord
 {
-    public static function configure(Schema $schema): Schema
+    protected static string $resource = StockMutationResource::class;
+
+    protected function handleRecordCreation(array $data): Model
     {
-        return $schema
-            ->components([
-                TextInput::make('reference_number')
-                    ->label('No. Referensi / Nota')
-                    ->required()
-                    ->default(fn() => 'JB-IN-'. strtoupper(bin2hex(random_bytes(2))))
-                    ->unique(ignoreRecord: true),
+        // Ambil data items dari repeater
+        $items = $data['items'] ?? [];
+        
+        // Hapus key items agar tidak error saat create ke model StockMutation
+        unset($data['items']);
 
-                DatePicker::make('mutation_date')
-                    ->label('Tanggal Masuk')
-                    ->required()
-                    ->default(now()),
+        $data['status'] = 'PENDING';
+        $data['type'] = 'Masuk';
 
-                Select::make('branch_id')
-                    ->label('Tujuan Cabang')
-                    ->relationship('branch', 'name')
-                    ->searchable()
-                    ->preload()
-                    ->required(),
+        $createdRecord = null;
 
-                Select::make('supplier_id')
-                    ->label('Supplier')
-                    ->relationship('supplier', 'name')
-                    ->searchable()
-                    ->preload()
-                    ->required(),
+        // Jika items kosong (antisipasi), buat 1 data kosong
+        if (empty($items)) {
+            return static::getModel()::create($data);
+        }
 
-                Select::make('transaction_type')
-                    ->label('Tipe Transaksi')
-                    ->options([
-                        'pembelian' => 'Pembelian',
-                        'mutasi' => 'Mutasi Antar Cabang',
-                    ])
-                    ->default('pembelian')
-                    ->required()
-                    ->live(),
+        // Looping setiap baris barang dari repeater dan simpan dengan reference_number yang sama
+        foreach ($items as $item) {
+            $mutationData = array_merge($data, [
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'purchase_price' => $item['purchase_price'],
+                'notes' => $item['notes'] ?? null,
+            ]);
 
-                Select::make('payment_status')
-                    ->label('Status Pembayaran')
-                    ->options([
-                        'lunas' => 'Lunas',
-                        'hutang' => 'Hutang',
-                    ])
-                    ->visible(fn(Get $get) => $get('transaction_type') === 'pembelian')
-                    ->required(fn(Get $get) => $get('transaction_type') === 'pembelian'),
+            $createdRecord = static::getModel()::create($mutationData);
+        }
 
-                Hidden::make('type')
-                    ->default('Masuk'),
+        return $createdRecord;
+    }
 
-                // --- REPEATER DETAIL BARANG (BISA BANYAK) ---
-                Repeater::make('items')
-                    ->label('Daftar Barang Masuk')
-                    ->schema([
-                        Select::make('product_id')
-                            ->label('Pilih Barang')
-                            ->relationship('product', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->columnSpan(4),
+    protected function getRedirectUrl(): string
+    {
+        // Mengarahkan kembali ke halaman index/tabel setelah berhasil simpan
+        return $this->getResource()::getUrl('index');
+    }
 
-                        TextInput::make('quantity')
-                            ->label('Jumlah Masuk')
-                            ->numeric()
-                            ->minValue(1)
-                            ->default(1)
-                            ->required()
-                            ->columnSpan(2),
+    public function getTitle(): string
+    {
+        return 'Tambah Barang Masuk';
+    }
 
-                        TextInput::make('purchase_price')
-                            ->label('Harga Beli')
-                            ->numeric()
-                            ->required()
-                            ->prefix('Rp')
-                            ->columnSpan(3),
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction()
+                ->label('Simpan'),
 
-                        TextInput::make('notes')
-                            ->label('Keterangan')
-                            ->columnSpan(3),
-                    ])
-                    ->columns(12)
-                    ->defaultItems(1)
-                    ->required()
-                    ->columnSpanFull(),
-            ])
-            ->columns(2);
+            $this->getCreateAnotherFormAction()
+                ->label('Simpan & Buat Lagi'),
+
+            $this->getCancelFormAction()
+                ->label('Batal'),
+        ];
     }
 }
