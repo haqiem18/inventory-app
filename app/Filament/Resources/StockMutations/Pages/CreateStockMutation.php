@@ -14,25 +14,25 @@ class CreateStockMutation extends CreateRecord
 
     protected function handleRecordCreation(array $data): StockMutation
     {
-        dd($data['items'] ?? 'Items kosong atau key berbeda', $data);
+        // Ambil data items dari repeater
         $items = $data['items'] ?? [];
 
         if (empty($items)) {
-            throw new Exception('Daftar barang (items) pada repeater tidak boleh kosong.');
+            throw new Exception('Daftar barang pada repeater tidak boleh kosong.');
         }
 
-        // Ambil item pertama untuk baris utama
+        // Ambil item pertama untuk record utama
         $firstItem = array_shift($items);
-
+        
         $qtyFirst = $firstItem['quantity'] ?? 1;
         $priceFirst = $firstItem['purchase_price'] ?? 0;
         $subtotalFirst = $qtyFirst * $priceFirst;
 
-        // Siapkan data untuk record utama
+        // Petakan data utama
         $data['product_id']     = $firstItem['product_id'] ?? null;
         $data['quantity']       = $qtyFirst;
         $data['purchase_price'] = $priceFirst;
-        $data['price']          = 0; // Harga jual dikosongkan untuk barang masuk
+        $data['price']          = 0;
         $data['subtotal']       = $subtotalFirst;
         $data['paid_amount']    = (($data['payment_status'] ?? '') === 'lunas') ? $subtotalFirst : 0;
         $data['notes']          = $firstItem['notes'] ?? null;
@@ -41,11 +41,11 @@ class CreateStockMutation extends CreateRecord
 
         unset($data['items']);
 
-        // Gunakan transaksi database untuk menyimpan record utama dan sisa item repeater
         return DB::transaction(function () use ($data, $items) {
+            // Simpan data utama
             $record = static::getModel()::create($data);
 
-            // Jika ada lebih dari 1 item di repeater, buat record tambahan
+            // Jika ada item tambahan di repeater, simpan sebagai baris baru dengan nomor referensi yang sama
             foreach ($items as $item) {
                 $qty = $item['quantity'] ?? 1;
                 $price = $item['purchase_price'] ?? 0;
