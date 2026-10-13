@@ -12,23 +12,23 @@ class CreateStockMutation extends CreateRecord
 {
     protected static string $resource = StockMutationResource::class;
 
-    protected function handleRecordCreation(array $data): StockMutation
+    protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Ambil data items dari repeater
-        $items = $data['items'] ?? [];
+        // Fallback mengambil data items langsung dari form state jika tidak ada di parameter utama
+        $formData = $this->form->getState();
+        $items = $formData['items'] ?? $data['items'] ?? [];
 
         if (empty($items)) {
-            throw new Exception('Daftar barang pada repeater tidak boleh kosong.');
+            throw new Exception('Daftar barang (items) pada repeater kosong. Periksa input form Anda.');
         }
 
-        // Ambil item pertama untuk record utama
+        // Ambil item pertama untuk data utama record yang akan dibuat pertama kali
         $firstItem = array_shift($items);
-        
+
         $qtyFirst = $firstItem['quantity'] ?? 1;
         $priceFirst = $firstItem['purchase_price'] ?? 0;
         $subtotalFirst = $qtyFirst * $priceFirst;
 
-        // Petakan data utama
         $data['product_id']     = $firstItem['product_id'] ?? null;
         $data['quantity']       = $qtyFirst;
         $data['purchase_price'] = $priceFirst;
@@ -39,32 +39,32 @@ class CreateStockMutation extends CreateRecord
         $data['status']         = 'PENDING';
         $data['type']           = 'Masuk';
 
+        // Bersihkan key items agar tidak ikut disimpan ke kolom utama tabel
         unset($data['items']);
 
-        return DB::transaction(function () use ($data, $items) {
-            // Simpan data utama
-            $record = static::getModel()::create($data);
+        // Jika ada sisa item di repeater, simpan secara transaksional di belakang
+        if (!empty($items)) {
+            DB::transaction(function () use ($items, $data) {
+                foreach ($items as $item) {
+                    $qty = $item['quantity'] ?? 1;
+                    $price = $item['purchase_price'] ?? 0;
+                    $subtotal = $qty * $price;
 
-            // Jika ada item tambahan di repeater, simpan sebagai baris baru dengan nomor referensi yang sama
-            foreach ($items as $item) {
-                $qty = $item['quantity'] ?? 1;
-                $price = $item['purchase_price'] ?? 0;
-                $subtotal = $qty * $price;
+                    $extraData = $data;
+                    $extraData['product_id']     = $item['product_id'] ?? null;
+                    $extraData['quantity']       = $qty;
+                    $extraData['purchase_price'] = $price;
+                    $extraData['price']          = 0;
+                    $extraData['subtotal']       = $subtotal;
+                    $extraData['paid_amount']    = (($data['payment_status'] ?? '') === 'lunas') ? $subtotal : 0;
+                    $extraData['notes']          = $item['notes'] ?? null;
 
-                $extraData = $data;
-                $extraData['product_id']     = $item['product_id'] ?? null;
-                $extraData['quantity']       = $qty;
-                $extraData['purchase_price'] = $price;
-                $extraData['price']          = 0;
-                $extraData['subtotal']       = $subtotal;
-                $extraData['paid_amount']    = (($data['payment_status'] ?? '') === 'lunas') ? $subtotal : 0;
-                $extraData['notes']          = $item['notes'] ?? null;
+                    StockMutation::create($extraData);
+                }
+            });
+        }
 
-                static::getModel()::create($extraData);
-            }
-
-            return $record;
-        });
+        return $data;
     }
 
     protected function getRedirectUrl(): string
