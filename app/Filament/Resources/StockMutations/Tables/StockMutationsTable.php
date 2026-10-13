@@ -53,7 +53,7 @@ class StockMutationsTable
 
                 TextColumn::make('purchase_price')
                     ->label('Harga Beli (Rp)')
-                    ->getStateUsing(fn ($record) => $record->purchase_price ?? $record->price ?? 0)
+                    ->getStateUsing(fn ($record) => $record->purchase_price ?? $record->purchase_price ?? 0)
                     ->formatStateUsing(fn ($state): string => 'Rp ' . number_format($state, 0, ',', '.'))
                     ->sortable()
                     ->hidden(fn (): bool => Auth::user()->role !== 'super_admin'),
