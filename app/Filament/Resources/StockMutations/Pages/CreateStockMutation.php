@@ -15,27 +15,32 @@ class CreateStockMutation extends CreateRecord
         $items = $data['items'] ?? [];
         unset($data['items']);
 
-        $data['status'] = 'PENDING';
-        $data['type'] = 'Masuk';
+        $baseData = array_merge($data, [
+            'status' => 'PENDING',
+            'type' => 'Masuk',
+        ]);
 
         $createdRecord = null;
 
-        if (empty($items)) {
-            return static::getModel()::create($data);
-        }
-
+        // Looping setiap baris barang dari repeater
         foreach ($items as $item) {
-            $mutationData = array_merge($data, [
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
+            $mutationData = array_merge($baseData, [
+                'product_id'     => $item['product_id'],
+                'quantity'       => $item['quantity'],
                 'purchase_price' => $item['purchase_price'],
-                'notes' => $item['notes'] ?? null,
+                'subtotal'       => $item['quantity'] * $item['purchase_price'],
+                'notes'          => $item['notes'] ?? null,
             ]);
+
+            if ($baseData['payment_status'] === 'lunas') {
+                $mutationData['paid_amount'] = $mutationData['subtotal'];
+            }
 
             $createdRecord = static::getModel()::create($mutationData);
         }
 
-        return $createdRecord;
+        // Kembalikan record terakhir agar Filament bisa redirect dengan benar
+        return $createdRecord ?? static::getModel()->first();
     }
 
     protected function getRedirectUrl(): string
