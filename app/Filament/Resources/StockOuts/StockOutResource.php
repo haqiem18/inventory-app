@@ -29,6 +29,7 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
+use Filament\Forms\Components\Repeater;
 
 class StockOutResource extends Resource
 {
@@ -52,6 +53,8 @@ class StockOutResource extends Resource
 
         return $query;
     }
+
+
 
     public static function form(Schema $schema): Schema
     {
@@ -86,8 +89,8 @@ class StockOutResource extends Resource
                     ->searchable()
                     ->preload()
                     ->live()
-                    ->default(fn () => Auth::user()->role === 'admin_cabang' ? Auth::user()->branch_id : null)
-                    ->disabled(fn () => Auth::user()->role === 'admin_cabang')
+                    ->default(fn() => Auth::user()->role === 'admin_cabang' ? Auth::user()->branch_id : null)
+                    ->disabled(fn() => Auth::user()->role === 'admin_cabang')
                     ->dehydrated(true),
 
                 Select::make('to_branch_id')
@@ -124,43 +127,60 @@ class StockOutResource extends Resource
                     ->visible(fn($get) => $get('sub_type') === 'penjualan')
                     ->default('lunas'),
 
-                Select::make('product_id')
-                    ->label('Nama Barang')
-                    ->searchable()
-                    ->required()
-                    ->preload()
-                    ->relationship('product', 'name', function (Builder $query, UtilitiesGet $get) {
-                        $branchId = $get('branch_id');
-                        if ($branchId) {
-                            $query->whereIn('id', ProductStock::where('branch_id', $branchId)->pluck('product_id'));
-                        }
-                    })
-                    ->helperText(function (UtilitiesGet $get) {
-                        $stock = ProductStock::where('product_id', $get('product_id'))
-                            ->where('branch_id', $get('branch_id'))
-                            ->value('stock');
-                        return $get('product_id') ? "Sisa Stok: " . ($stock ?? 0) : "";
-                    }),
+                // --- REPEATER MULTI BARANG KELUAR ---
+                Repeater::make('items')
+                    ->label('Daftar Barang Keluar')
+                    ->schema([
+                        Select::make('product_id')
+                            ->label('Nama Barang')
+                            ->searchable()
+                            ->required()
+                            ->preload()
+                            ->relationship('product', 'name', function (Builder $query, UtilitiesGet $get) {
+                                $branchId = $get('../../branch_id');
+                                if ($branchId) {
+                                    $query->whereIn('id', ProductStock::where('branch_id', $branchId)->pluck('product_id'));
+                                }
+                            })
+                            ->live()
+                            ->helperText(function (UtilitiesGet $get) {
+                                $branchId = $get('../../branch_id');
+                                $productId = $get('product_id');
+                                $stock = ProductStock::where('product_id', $productId)
+                                    ->where('branch_id', $branchId)
+                                    ->value('stock');
+                                return $productId ? "Sisa Stok: " . ($stock ?? 0) : "";
+                            })
+                            ->columnSpan(4),
 
-                TextInput::make('quantity')
-                    ->label('Qty Keluar')
-                    ->numeric()
-                    ->required()
-                    ->minValue(1),
+                        TextInput::make('quantity')
+                            ->label('Qty Keluar')
+                            ->numeric()
+                            ->required()
+                            ->default(1)
+                            ->minValue(1)
+                            ->columnSpan(2),
 
-                TextInput::make('purchase_price')
-                    ->label('Harga Beli')
-                    ->required()
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->visible(fn(): bool => Auth::user()->role === 'super_admin'),
+                        TextInput::make('purchase_price')
+                            ->label('Harga Beli')
+                            ->required()
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->visible(fn(): bool => Auth::user()->role === 'super_admin')
+                            ->columnSpan(3),
 
-                TextInput::make('price')
-                    ->label('Harga Jual')
-                    ->required()
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->visible(fn(): bool => Auth::user()->role === 'super_admin'),
+                        TextInput::make('price')
+                            ->label('Harga Jual')
+                            ->required()
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->visible(fn(): bool => Auth::user()->role === 'super_admin')
+                            ->columnSpan(3),
+                    ])
+                    ->columns(12)
+                    ->defaultItems(1)
+                    ->columnSpanFull()
+                    ->required(),
             ]);
     }
 
@@ -207,7 +227,7 @@ class StockOutResource extends Resource
                     ->summarize(
                         Sum::make()
                             ->label('Total Qty')
-                            ->using(fn ($query) => $query->sum('quantity'))
+                            ->using(fn($query) => $query->sum('quantity'))
                     ),
 
                 TextColumn::make('purchase_price')
@@ -229,7 +249,7 @@ class StockOutResource extends Resource
                     ->summarize(
                         Sum::make()
                             ->label('Grand Total')
-                            ->using(fn ($query) => $query->sum('subtotal'))
+                            ->using(fn($query) => $query->sum('subtotal'))
                             ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.'))
                     )
                     ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
