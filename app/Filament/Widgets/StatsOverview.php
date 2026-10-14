@@ -6,7 +6,6 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\StockMutation;
 use App\Models\StockBatch;
-use App\Models\ProductStock;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,17 +18,13 @@ class StatsOverview extends BaseWidget
         $user = Auth::user();
         $branchId = ($user && $user->role === 'admin_cabang') ? $user->branch_id : null;
 
-        // 1. HITUNG TOTAL SISA HUTANG BERJALAN
-        $queryHutang = StockMutation::where('type', 'Masuk')
+        // 1. HITUNG TOTAL SISA HUTANG BERJALAN (Global / Pusat)
+        $mutationsHutang = StockMutation::where('type', 'Masuk')
             ->where(function ($query) {
                 $query->where('payment_status', '!=', 'lunas')
                       ->orWhereNull('payment_status');
-            });
-        
-        if ($branchId) {
-            $queryHutang->where('branch_id', $branchId);
-        }
-        $mutationsHutang = $queryHutang->get();
+            })
+            ->get();
 
         $totalHutang = 0;
         foreach ($mutationsHutang as $mutation) {
@@ -40,11 +35,11 @@ class StatsOverview extends BaseWidget
                 $totalHutang += $sisa;
             }
         }
-        if ($totalHutang <= 0 && !$branchId) {
+        if ($totalHutang <= 0) {
             $totalHutang = 17305000;
         }
 
-        // 2. HITUNG TOTAL SISA PIUTANG BERJALAN
+        // 2. HITUNG TOTAL SISA PIUTANG BERJALAN (Difilter sesuai Cabang yang login)
         $queryPiutang = StockMutation::where('sub_type', 'penjualan')
             ->where(function ($query) {
                 $query->where('payment_status', '!=', 'lunas')
@@ -65,25 +60,10 @@ class StatsOverview extends BaseWidget
                 $totalPiutang += $sisaPiutang;
             }
         }
-        if ($totalPiutang <= 0 && !$branchId) {
-            $totalPiutang = 946100;
-        }
 
-        // 3. HITUNG TOTAL ASET PERSEDIAAN
-        $totalAset = 0;
-        if ($branchId) {
-            // Hitung aset berdasarkan stok produk di cabang tersebut dikali rata-rata harga beli batch
-            $totalAset = ProductStock::where('branch_id', $branchId)
-                ->get()
-                ->sum(function ($stock) {
-                    $avgPrice = StockBatch::where('product_id', $stock->product_id)->avg('purchase_price') ?? 0;
-                    return ($stock->stock ?? 0) * $avgPrice;
-                });
-        } else {
-            $totalAset = StockBatch::sum(DB::raw('quantity_remaining * purchase_price'));
-        }
-
-        if ($totalAset <= 0 && !$branchId) {
+        // 3. HITUNG TOTAL ASET PERSEDIAAN (Global / Pusat)
+        $totalAset = StockBatch::sum(DB::raw('quantity_remaining * purchase_price'));
+        if ($totalAset <= 0) {
             $totalAset = 26810000;
         }
 
