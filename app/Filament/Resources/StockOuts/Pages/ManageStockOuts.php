@@ -95,72 +95,74 @@ class ManageStockOuts extends ManageRecords
         ];
     }
 
-    // Menangani pengisian data ke form saat tombol Edit diklik
+    // Mengonfigurasi EditAction bawaan pada ManageRecords agar memuat semua item berdasarkan reference_number
     protected function configureEditAction(Actions\EditAction $action): void
     {
-        $action->mutateRecordDataUsing(function (array $data, StockMutation $record): array {
-            // Ambil semua baris yang memiliki reference_number yang sama
-            $relatedItems = StockMutation::where('reference_number', $record->reference_number)->get();
+        $action
+            ->mutateRecordDataUsing(function (array $data, StockMutation $record): array {
+                // Ambil semua mutasi dengan reference_number yang sama
+                $relatedItems = StockMutation::where('reference_number', $record->reference_number)->get();
 
-            $items = [];
-            foreach ($relatedItems as $item) {
-                $items[] = [
-                    'product_id'     => $item->product_id,
-                    'quantity'       => $item->quantity,
-                    'purchase_price' => $item->purchase_price,
-                    'price'          => $item->price,
-                ];
-            }
-
-            $data['items'] = $items;
-            return $data;
-        })->using(function (StockMutation $record, array $data): StockMutation {
-            $items = $data['items'] ?? [];
-
-            if (empty($items)) {
-                throw new Exception('Daftar barang pada repeater tidak boleh kosong.');
-            }
-
-            return DB::transaction(function () use ($record, $data, $items) {
-                // Hapus semua baris lama dengan reference_number ini untuk kemudian di-insert ulang
-                StockMutation::where('reference_number', $record->reference_number)->delete();
-
-                $firstItem = array_shift($items);
-                $qtyFirst = $firstItem['quantity'] ?? 1;
-                $priceFirst = $firstItem['price'] ?? 0;
-                $purchasePriceFirst = $firstItem['purchase_price'] ?? 0;
-                $subtotalFirst = $qtyFirst * $priceFirst;
-
-                $data['product_id']     = $firstItem['product_id'] ?? null;
-                $data['quantity']       = $qtyFirst;
-                $data['price']          = $priceFirst;
-                $data['purchase_price'] = $purchasePriceFirst;
-                $data['subtotal']       = $subtotalFirst;
-                $data['type']           = 'OUT';
-                unset($data['items']);
-
-                // Buat record utama yang baru
-                $updatedRecord = StockMutation::create($data);
-
-                // Buat baris-baris berikutnya jika ada
-                foreach ($items as $item) {
-                    $qty = $item['quantity'] ?? 1;
-                    $price = $item['price'] ?? 0;
-                    $purchasePrice = $item['purchase_price'] ?? 0;
-                    $subtotal = $qty * $price;
-
-                    $extraData = $data;
-                    $extraData['product_id']     = $item['product_id'] ?? null;
-                    $extraData['quantity']       = $qty;
-                    $extraData['price']          = $price;
-                    $extraData['purchase_price'] = $purchasePrice;
-                    $extraData['subtotal']       = $subtotal;
-
-                    StockMutation::create($extraData);
+                $items = [];
+                foreach ($relatedItems as $item) {
+                    $items[] = [
+                        'product_id'     => $item->product_id,
+                        'quantity'       => $item->quantity,
+                        'purchase_price' => $item->purchase_price,
+                        'price'          => $item->price,
+                    ];
                 }
 
-                return $updatedRecord;
+                $data['items'] = $items;
+                return $data;
+            })
+            ->using(function (StockMutation $record, array $data): StockMutation {
+                $items = $data['items'] ?? [];
+
+                if (empty($items)) {
+                    throw new Exception('Daftar barang pada repeater tidak boleh kosong.');
+                }
+
+                return DB::transaction(function () use ($record, $data, $items) {
+                    // Hapus data lama yang memiliki reference_number sama
+                    StockMutation::where('reference_number', $record->reference_number)->delete();
+
+                    $firstItem = array_shift($items);
+                    $qtyFirst = $firstItem['quantity'] ?? 1;
+                    $priceFirst = $firstItem['price'] ?? 0;
+                    $purchasePriceFirst = $firstItem['purchase_price'] ?? 0;
+                    $subtotalFirst = $qtyFirst * $priceFirst;
+
+                    $data['product_id']     = $firstItem['product_id'] ?? null;
+                    $data['quantity']       = $qtyFirst;
+                    $data['price']          = $priceFirst;
+                    $data['purchase_price'] = $purchasePriceFirst;
+                    $data['subtotal']       = $subtotalFirst;
+                    $data['type']           = 'OUT';
+                    unset($data['items']);
+
+                    // Buat record utama yang baru
+                    $updatedRecord = StockMutation::create($data);
+
+                    // Buat kembali record untuk item-item berikutnya di repeater
+                    foreach ($items as $item) {
+                        $qty = $item['quantity'] ?? 1;
+                        $price = $item['price'] ?? 0;
+                        $purchasePrice = $item['purchase_price'] ?? 0;
+                        $subtotal = $qty * $price;
+
+                        $extraData = $data;
+                        $extraData['product_id']     = $item['product_id'] ?? null;
+                        $extraData['quantity']       = $qty;
+                        $extraData['price']          = $price;
+                        $extraData['purchase_price'] = $purchasePrice;
+                        $extraData['subtotal']       = $subtotal;
+
+                        StockMutation::create($extraData);
+                    }
+
+                    return $updatedRecord;
+                });
             });
-        });
     }
 }
