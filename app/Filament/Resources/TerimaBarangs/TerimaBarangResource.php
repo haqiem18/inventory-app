@@ -33,7 +33,7 @@ class TerimaBarangResource extends Resource
 {
     protected static ?string $model = StockMutation::class;
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUpOnSquareStack;
-    protected static UnitEnum|string|null $navigationGroup = 'Transaksi ';
+    protected static UnitEnum|string|null $navigationGroup = 'Operasional ';
     protected static ?string $recordTitleAttribute = 'reference_number';
     protected static ?string $pluralModelLabel = 'Terima Barang';
     protected static ?string $modelLabel = 'Terima Barang';
