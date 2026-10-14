@@ -13,7 +13,7 @@ class StockMutationObserver
 
     public function creating(StockMutation $mutation): void
     {
-        // Pastikan status otomatis jadi 'PENDING' jika kosong/null
+        // Pastikan status otomatis jadi 'pending' jika kosong/null
         if (empty($mutation->status)) {
             $mutation->status = 'PENDING';
         }
@@ -77,7 +77,7 @@ class StockMutationObserver
 
     private function processStock(StockMutation $mutation, $action)
     {
-        $isRevert    = ($action === 'revert');
+        $isRevert     = ($action === 'revert');
         $product_id   = $isRevert ? $mutation->getOriginal('product_id') : $mutation->product_id;
         $branch_id    = $isRevert ? $mutation->getOriginal('branch_id') : $mutation->branch_id;
         $to_branch_id = $isRevert ? $mutation->getOriginal('to_branch_id') : $mutation->to_branch_id;
@@ -104,7 +104,7 @@ class StockMutationObserver
                 StockBatch::where('stock_mutation_id', $mutation->id)->delete();
             }
         } elseif ($type === 'OUT') {
-            // 1. Kurangi stok di cabang asal
+            // 1. Kurangi stok di cabang asal (Pusat)
             $origin = ProductStock::firstOrCreate(
                 ['product_id' => $product_id, 'branch_id' => $branch_id],
                 ['stock' => 0]
@@ -159,7 +159,7 @@ class StockMutationObserver
 
             foreach ($batches as $batch) {
                 if ($absQty <= 0) break;
-                $add = min(($batch->quantity_initial - $batch->quantity_remaining), $absQty);
+                $add = min($batch->quantity_initial - $batch->quantity_remaining, $absQty);
                 $batch->increment('quantity_remaining', $add);
                 $batch->update(['status' => 'active']);
                 $absQty -= $add;
