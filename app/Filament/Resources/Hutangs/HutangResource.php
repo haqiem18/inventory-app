@@ -64,7 +64,6 @@ class HutangResource extends Resource
                 // 1. KOLOM TOTAL TAGIHAN
                 TextColumn::make('subtotal')
                     ->label('Total Tagihan')
-                    ->state(fn($record) => $record->purchase_price * $record->quantity)
                     ->summarize(
                         Summarizer::make()
                             ->using(fn($query) => $query->sum(DB::raw('purchase_price * quantity')))
@@ -86,12 +85,13 @@ class HutangResource extends Resource
                     )
                     ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.')),
 
-                // 3. KOLOM SISA HUTANG (Perbaikan Summarize)
+                // 3. KOLOM SISA HUTANG
                 TextColumn::make('sisa_hutang')
                     ->label('Sisa Hutang')
                     ->state(function ($record) {
                         if ($record->payment_status === 'lunas') return 0;
-                        return ($record->purchase_price * $record->quantity) - $record->debtPayments()->sum('amount_paid');
+                        $tagihan = ($record->purchase_price ?? 0) * ($record->quantity ?? 0);
+                        return $tagihan - $record->debtPayments()->sum('amount_paid');
                     })
                     ->color(fn($state) => $state > 0 ? 'danger' : 'success')
                     ->weight('bold')
@@ -99,17 +99,14 @@ class HutangResource extends Resource
                         Summarizer::make()
                             ->label('')
                             ->using(function ($query) {
-                                // Kita ambil semua ID yang sedang tampil di tabel/filter
                                 $ids = $query->pluck('id');
-
-                                // Ambil semua data hutang yang BELUM LUNAS
                                 $mutations = \App\Models\StockMutation::whereIn('id', $ids)
                                     ->where('payment_status', '!=', 'lunas')
                                     ->get();
 
                                 $totalSisa = 0;
                                 foreach ($mutations as $mutation) {
-                                    $tagihan = $mutation->purchase_price * $mutation->quantity;
+                                    $tagihan = ($mutation->purchase_price ?? 0) * ($mutation->quantity ?? 0);
                                     $terbayar = \App\Models\DebtPayment::where('stock_mutation_id', $mutation->id)->sum('amount_paid');
                                     $totalSisa += ($tagihan - $terbayar);
                                 }
@@ -140,7 +137,18 @@ class HutangResource extends Resource
                             ->label('Jumlah Pembayaran')
                             ->numeric()
                             ->prefix('Rp')
-                            ->required(),
+                            ->required()
+                            ->rules([
+                                fn ($record) => function ($attribute, $value, $fail) use ($record) {
+                                    $tagihan = ($record->purchase_price ?? 0) * ($record->quantity ?? 0);
+                                    $terbayar = $record->debtPayments()->sum('amount_paid');
+                                    $sisaHutang = $tagihan - $terbayar;
+
+                                    if ($value > $sisaHutang) {
+                                        $fail('Jumlah pembayaran melebihi sisa hutang (Sisa saat ini: Rp ' . number_format($sisaHutang, 0, ',', '.') . ').');
+                                    }
+                                },
+                            ]),
                         DatePicker::make('payment_date')
                             ->label('Tanggal Pembayaran')
                             ->default(now())
@@ -152,12 +160,13 @@ class HutangResource extends Resource
                             'payment_date' => $data['payment_date'],
                         ]);
 
-                        $totalTagihan = $record->purchase_price * $record->quantity;
+                        $totalTagihan = ($record->purchase_price ?? 0) * ($record->quantity ?? 0);
                         $totalTerbayar = $record->debtPayments()->sum('amount_paid');
 
                         if ($totalTerbayar >= $totalTagihan) {
                             $record->update(['payment_status' => 'lunas']);
                         }
+                        
                         Notification::make()
                             ->title('Pembayaran Berhasil')
                             ->body('Pembayaran sebesar Rp ' . number_format($data['amount_paid'], 0, ',', '.') . ' telah dicatat.')
