@@ -20,8 +20,8 @@ class ProductStockResource extends Resource
 {
     protected static ?string $model = ProductStock::class;
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCube;
-    protected static ?string $navigationLabel = 'Stok Barang';
-    protected static ?string $pluralModelLabel = 'Stok Barang';
+    protected static ?string $navigationLabel = 'Manajemen Stok';
+    protected static ?string $pluralModelLabel = 'Manajemen Stok';
     public static function form(Schema $schema): Schema
     {
         return $schema
