@@ -15,6 +15,7 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
@@ -30,6 +31,7 @@ use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\Repeater;
+use Exception;
 
 class StockOutResource extends Resource
 {
@@ -53,8 +55,6 @@ class StockOutResource extends Resource
 
         return $query;
     }
-
-
 
     public static function form(Schema $schema): Schema
     {
@@ -300,7 +300,68 @@ class StockOutResource extends Resource
             ])
             ->recordActions([
                 EditAction::make()
-                    ->visible(fn(): bool => Auth::user()->role === 'super_admin'),
+                    ->visible(fn(): bool => Auth::user()->role === 'super_admin')
+                    ->mutateRecordDataUsing(function (array $data, StockMutation $record): array {
+                        $relatedItems = StockMutation::where('reference_number', $record->reference_number)->get();
+
+                        $items = [];
+                        foreach ($relatedItems as $item) {
+                            $items[] = [
+                                'product_id'     => $item->product_id,
+                                'quantity'       => $item->quantity,
+                                'purchase_price' => $item->purchase_price,
+                                'price'          => $item->price,
+                            ];
+                        }
+
+                        $data['items'] = $items;
+                        return $data;
+                    })
+                    ->using(function (StockMutation $record, array $data): StockMutation {
+                        $items = $data['items'] ?? [];
+
+                        if (empty($items)) {
+                            throw new Exception('Daftar barang pada repeater tidak boleh kosong.');
+                        }
+
+                        return DB::transaction(function () use ($record, $data, $items) {
+                            StockMutation::where('reference_number', $record->reference_number)->delete();
+
+                            $firstItem = array_shift($items);
+                            $qtyFirst = $firstItem['quantity'] ?? 1;
+                            $priceFirst = $firstItem['price'] ?? 0;
+                            $purchasePriceFirst = $firstItem['purchase_price'] ?? 0;
+                            $subtotalFirst = $qtyFirst * $priceFirst;
+
+                            $data['product_id']     = $firstItem['product_id'] ?? null;
+                            $data['quantity']       = $qtyFirst;
+                            $data['price']          = $priceFirst;
+                            $data['purchase_price'] = $purchasePriceFirst;
+                            $data['subtotal']       = $subtotalFirst;
+                            $data['type']           = 'OUT';
+                            unset($data['items']);
+
+                            $updatedRecord = StockMutation::create($data);
+
+                            foreach ($items as $item) {
+                                $qty = $item['quantity'] ?? 1;
+                                $price = $item['price'] ?? 0;
+                                $purchasePrice = $item['purchase_price'] ?? 0;
+                                $subtotal = $qty * $price;
+
+                                $extraData = $data;
+                                $extraData['product_id']     = $item['product_id'] ?? null;
+                                $extraData['quantity']       = $qty;
+                                $extraData['price']          = $price;
+                                $extraData['purchase_price'] = $purchasePrice;
+                                $extraData['subtotal']       = $subtotal;
+
+                                StockMutation::create($extraData);
+                            }
+
+                            return $updatedRecord;
+                        });
+                    }),
 
                 Action::make('cetak_invoice')
                     ->label('Cetak')
