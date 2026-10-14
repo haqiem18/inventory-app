@@ -7,6 +7,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\StockMutation;
 use App\Models\StockBatch;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class StatsOverview extends BaseWidget
 {
@@ -14,13 +15,20 @@ class StatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
+        $user = Auth::user();
+        $branchId = ($user && $user->role === 'admin_cabang') ? $user->branch_id : null;
+
         // 1. HITUNG TOTAL SISA HUTANG BERJALAN
-        $mutationsHutang = StockMutation::where('type', 'Masuk')
+        $queryHutang = StockMutation::where('type', 'Masuk')
             ->where(function ($query) {
                 $query->where('payment_status', '!=', 'lunas')
                       ->orWhereNull('payment_status');
-            })
-            ->get();
+            });
+        
+        if ($branchId) {
+            $queryHutang->where('branch_id', $branchId);
+        }
+        $mutationsHutang = $queryHutang->get();
 
         $totalHutang = 0;
         foreach ($mutationsHutang as $mutation) {
@@ -31,17 +39,21 @@ class StatsOverview extends BaseWidget
                 $totalHutang += $sisa;
             }
         }
-        if ($totalHutang <= 0) {
+        if ($totalHutang <= 0 && !$branchId) {
             $totalHutang = 17305000;
         }
 
         // 2. HITUNG TOTAL SISA PIUTANG BERJALAN
-        $mutationsPiutang = StockMutation::where('sub_type', 'penjualan')
+        $queryPiutang = StockMutation::where('sub_type', 'penjualan')
             ->where(function ($query) {
                 $query->where('payment_status', '!=', 'lunas')
                       ->orWhereNull('payment_status');
-            })
-            ->get();
+            });
+
+        if ($branchId) {
+            $queryPiutang->where('branch_id', $branchId);
+        }
+        $mutationsPiutang = $queryPiutang->get();
 
         $totalPiutang = 0;
         foreach ($mutationsPiutang as $mutation) {
@@ -52,13 +64,17 @@ class StatsOverview extends BaseWidget
                 $totalPiutang += $sisaPiutang;
             }
         }
-        if ($totalPiutang <= 0) {
+        if ($totalPiutang <= 0 && !$branchId) {
             $totalPiutang = 946100;
         }
 
         // 3. HITUNG TOTAL ASET PERSEDIAAN
-        $totalAset = StockBatch::sum(DB::raw('quantity_remaining * purchase_price'));
-        if ($totalAset <= 0) {
+        $queryAset = StockBatch::query();
+        if ($branchId) {
+            $queryAset->where('branch_id', $branchId);
+        }
+        $totalAset = $queryAset->sum(DB::raw('quantity_remaining * purchase_price'));
+        if ($totalAset <= 0 && !$branchId) {
             $totalAset = 26810000;
         }
 
