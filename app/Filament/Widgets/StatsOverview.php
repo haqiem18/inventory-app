@@ -6,6 +6,7 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\StockMutation;
 use App\Models\StockBatch;
+use App\Models\ProductStock;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -69,11 +70,19 @@ class StatsOverview extends BaseWidget
         }
 
         // 3. HITUNG TOTAL ASET PERSEDIAAN
-        $queryAset = StockBatch::query();
+        $totalAset = 0;
         if ($branchId) {
-            $queryAset->where('branch_id', $branchId);
+            // Hitung aset berdasarkan stok produk di cabang tersebut dikali rata-rata harga beli batch
+            $totalAset = ProductStock::where('branch_id', $branchId)
+                ->get()
+                ->sum(function ($stock) {
+                    $avgPrice = StockBatch::where('product_id', $stock->product_id)->avg('purchase_price') ?? 0;
+                    return ($stock->stock ?? 0) * $avgPrice;
+                });
+        } else {
+            $totalAset = StockBatch::sum(DB::raw('quantity_remaining * purchase_price'));
         }
-        $totalAset = $queryAset->sum(DB::raw('quantity_remaining * purchase_price'));
+
         if ($totalAset <= 0 && !$branchId) {
             $totalAset = 26810000;
         }
