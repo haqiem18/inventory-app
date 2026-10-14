@@ -27,9 +27,33 @@ class DebtPaymentsRelationManager extends RelationManager
                 ->label('Nama Barang')
                 ->sortable()
                 ->searchable(),
+                
                 TextInput::make('amount_paid')
                     ->required()
-                    ->numeric(),
+                    ->numeric()
+                    ->rules([
+                        function () {
+                            return function (string $attribute, $value, \Closure $fail) {
+                                $mutation = $this->getOwnerRecord();
+                                if ($mutation) {
+                                    $tagihan = ($mutation->purchase_price ?? 0) * ($mutation->quantity ?? 0);
+                                    $currentPaymentId = $this->getRecord()?->id;
+                                    
+                                    // Hitung total pembayaran lain (jika sedang edit, abaikan nominal miliknya sendiri)
+                                    $paidSum = $mutation->debtPayments()
+                                        ->when($currentPaymentId, fn ($q) => $q->where('id', '!=', $currentPaymentId))
+                                        ->sum('amount_paid');
+                                        
+                                    $sisaHutang = $tagihan - $paidSum;
+
+                                    if ($value > $sisaHutang) {
+                                        $fail('Jumlah pembayaran melebihi sisa hutang (Sisa saat ini: Rp ' . number_format($sisaHutang, 0, ',', '.') . ').');
+                                    }
+                                }
+                            };
+                        },
+                    ]),
+
                 DatePicker::make('payment_date')
                     ->required(),
                 Textarea::make('notes')
