@@ -2,7 +2,6 @@
 
 namespace App\Providers\Filament;
 
-
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -18,18 +17,9 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Support\Facades\Auth;
-use App\Filament\Pages\Auth\Login; // <-- Tambahkan import ini di atas
 
 class AdminPanelProvider extends PanelProvider
 {
-    public static function shouldRegisterNavigation(): bool
-    {
-        return Auth::user()->role === 'super_admin';
-    }
-    public static function canViewAny(): bool
-    {
-        return Auth::user()->role === 'super_admin';
-    }
     public function panel(Panel $panel): Panel
     {
         return $panel
