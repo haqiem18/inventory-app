@@ -92,6 +92,19 @@ class StatsOverview extends BaseWidget
                 ->chart([5, 6, 7, 8, 9, 10, 12]);
         }
 
+        // 4. HITUNG STOK MENIPIS (Low Stock Alert)
+        $lowStockQuery = StockBatch::where('quantity_remaining', '<=', 5);
+        if ($branchId && in_array('branch_id', \Illuminate\Support\Facades\Schema::getColumnListing('stock_batches'))) {
+            $lowStockQuery->where('branch_id', $branchId);
+        }
+        $lowStockCount = $lowStockQuery->count();
+
+        $stats[] = Stat::make('Stok Menipis', $lowStockCount . ' Item')
+            ->description('Batch stok tersisa <= 5 unit')
+            ->descriptionIcon('heroicon-m-exclamation-triangle')
+            ->color($lowStockCount > 0 ? 'danger' : 'success')
+            ->chart([3, 2, 4, 3, 5, 2, $lowStockCount]);
+
         return $stats;
     }
 }
