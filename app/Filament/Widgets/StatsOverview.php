@@ -92,36 +92,34 @@ class StatsOverview extends BaseWidget
                 ->chart([5, 6, 7, 8, 9, 10, 12]);
         }
 
-        // 4. HITUNG STOK MENIPIS (Low Stock Alert - Fleksibel Cabang)
+        // 4. HITUNG STOK MENIPIS (Low Stock Alert)
         $lowStockQuery = StockBatch::where('quantity_remaining', '<=', 5)
             ->where('quantity_remaining', '>', 0);
 
         if ($branchId) {
-            $hasBranchCol = \Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'branch_id');
-            $hasMutationCol = \Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'stock_mutation_id');
-
-            if ($hasBranchCol && $hasMutationCol) {
-                $lowStockQuery->where(function ($q) use ($branchId) {
-                    $q->where('branch_id', $branchId)
-                      ->orWhereIn('stock_mutation_id', function ($sub) use ($branchId) {
-                          $sub->select('id')->from('stock_mutations')->where('branch_id', $branchId);
-                      });
-                });
-            } elseif ($hasBranchCol) {
+            // Cek apakah tabel stock_batches atau produknya memiliki branch_id
+            if (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'branch_id')) {
                 $lowStockQuery->where('branch_id', $branchId);
-            } elseif ($hasMutationCol) {
-                $lowStockQuery->whereIn('stock_mutation_id', function ($sub) use ($branchId) {
-                    $sub->select('id')->from('stock_mutations')->where('branch_id', $branchId);
-                });
             } else {
-                // Fallback jika tidak ada kolom cabang, gunakan filter mutasi standar
-                $lowStockQuery->whereIn('stock_mutation_id', function ($sub) use ($branchId) {
-                    $sub->select('id')->from('stock_mutations')->where('branch_id', $branchId);
-                });
+                // Jika tidak ada kolom branch_id di stock_batches, kita ambil dari mutasi atau biarkan meloloskan data jika belum terikat cabang langsung
+                $lowStockQuery->whereHas('stockMutation', function ($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
+                }, '>=', 1);
             }
         }
 
         $lowStockCount = $lowStockQuery->count();
+
+        // Fallback pengaman: jika hasil 0 khusus untuk admin cabang padahal ada data, 
+        // kita gunakan query langsung ke tabel stock_batches berdasarkan branch_id di stock_mutations
+        if ($isAdminCabang && $lowStockCount == 0) {
+            $lowStockCount = DB::table('stock_batches')
+                ->join('stock_mutations', 'stock_batches.stock_mutation_id', '=', 'stock_mutations.id')
+                ->where('stock_batches.quantity_remaining', '<=', 5)
+                ->where('stock_batches.quantity_remaining', '>', 0)
+                ->where('stock_mutations.branch_id', $branchId)
+                ->count();
+        }
 
         $stats[] = Stat::make('Stok Menipis', $lowStockCount . ' Item')
             ->description($isAdminCabang ? 'Stok menipis di cabang Anda' : 'Batch stok tersisa <= 5 unit')
