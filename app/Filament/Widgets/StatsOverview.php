@@ -92,27 +92,39 @@ class StatsOverview extends BaseWidget
                 ->chart([5, 6, 7, 8, 9, 10, 12]);
         }
 
-        // 4. HITUNG STOK MENIPIS (Low Stock Alert)
-        $lowStockQuery = StockBatch::where('quantity_remaining', '<=', 5);
+        // 4. HITUNG STOK MENIPIS (Low Stock Alert - Sesuai Cabang)
+        $lowStockQuery = StockBatch::where('quantity_remaining', '<=', 5)
+            ->where('quantity_remaining', '>', 0); // Opsional: mengabaikan stok 0 jika hanya ingin yang "menipis"
 
         if ($branchId) {
-            // Cek apakah tabel stock_batches punya kolom branch_id
+            // Cek apakah langsung ada branch_id di stock_batches
             if (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'branch_id')) {
                 $lowStockQuery->where('branch_id', $branchId);
             } 
-            // Jika tidak, filter berdasarkan stock_mutation yang memiliki branch_id
+            // Jika melalui relasi stock_mutation, pastikan mencakup mutasi masuk/keluar cabang tersebut
             elseif (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'stock_mutation_id')) {
-                $lowStockQuery->whereIn('stock_mutation_id', function ($query) use ($branchId) {
-                    $query->select('id')
-                          ->from('stock_mutations')
-                          ->where('branch_id', $branchId);
+                $lowStockQuery->whereHas('stockMutation', function ($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
                 });
             } else {
-                $lowStockQuery->whereRaw('1 = 0');
+                // Fallback pencarian alternatif jika kolom branch_id ada di tabel mutasi terkait
+                $lowStockQuery->whereIn('stock_mutation_id', function ($query) use ($branchId) {
+                    $query->select('id')->from('stock_mutations')->where('branch_id', $branchId);
+                });
             }
         }
 
         $lowStockCount = $lowStockQuery->count();
+
+        // Jika angka masih 0 padahal ada stok 2, mari kita gunakan fallback langsung ke data stok aktif cabang jika relasi mutasi kosong:
+        if ($branchId && $lowStockCount == 0) {
+            // Hitung manual via data mutasi yang merujuk ke branch_id
+            $lowStockCount = StockBatch::where('quantity_remaining', '<=', 5)
+                ->where('quantity_remaining', '>', 0)
+                ->whereHas('stockMutation', function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
+                })->count();
+        }
 
         $stats[] = Stat::make('Stok Menipis', $lowStockCount . ' Item')
             ->description($isAdminCabang ? 'Stok menipis di cabang Anda' : 'Batch stok tersisa <= 5 unit')
