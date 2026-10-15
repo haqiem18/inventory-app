@@ -4,7 +4,6 @@ namespace App\Filament\Widgets;
 
 use App\Models\StockMutation;
 use Filament\Widgets\ChartWidget;
-use Filament\Support\RawJs;
 use Illuminate\Support\Facades\Auth;
 
 class StockOutDoughnutChart extends ChartWidget
@@ -26,33 +25,29 @@ class StockOutDoughnutChart extends ChartWidget
             return $q->sum('quantity');
         };
 
+        $produksi = $query('produksi');
+        $penjualan = $query('penjualan');
+        $retur = $query('retur');
+        $mutasi = $query('mutasi');
+
+        $total = $produksi + $penjualan + $retur + $mutasi;
+
+        // Hitung persentase aman dari PHP
+        $getPct = fn($val) => $total > 0 ? round(($val / $total) * 100, 1) : 0;
+
         return [
             'datasets' => [
                 [
                     'label' => 'Total Qty',
-                    'data' => [$query('produksi'), $query('penjualan'), $query('retur'), $query('mutasi')],
+                    'data' => [$produksi, $penjualan, $retur, $mutasi],
                     'backgroundColor' => ['#ef4444', '#10b981', '#f59e0b', '#8b5cf6'],
                 ],
             ],
-            'labels' => ['Produksi', 'Penjualan', 'Retur', 'Mutasi Cabang'],
-        ];
-    }
-
-    protected function getOptions(): ?array
-    {
-        return [
-            'plugins' => [
-                'tooltip' => [
-                    'callbacks' => [
-                        'label' => RawJs::make("function(context) {
-                            let label = context.label || '';
-                            let value = context.parsed || 0;
-                            let total = context.chart._metasets[context.datasetIndex].total;
-                            let percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
-                            return label + ': ' + value + ' (' + percentage + ')';
-                        }"),
-                    ],
-                ],
+            'labels' => [
+                'Produksi (' . $getPct($produksi) . '%)',
+                'Penjualan (' . $getPct($penjualan) . '%)',
+                'Retur (' . $getPct($retur) . '%)',
+                'Mutasi Cabang (' . $getPct($mutasi) . '%)',
             ],
         ];
     }
