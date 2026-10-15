@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\StockMutation;
 use Filament\Widgets\ChartWidget;
+use Filament\Support\RawJs;
 use Illuminate\Support\Facades\Auth;
 
 class StockOutDoughnutChart extends ChartWidget
@@ -42,7 +43,15 @@ class StockOutDoughnutChart extends ChartWidget
         return [
             'plugins' => [
                 'tooltip' => [
-                    'enabled' => true,
+                    'callbacks' => [
+                        'label' => RawJs::make("function(context) {
+                            let label = context.label || '';
+                            let value = context.parsed || 0;
+                            let total = context.chart._metasets[context.datasetIndex].total;
+                            let percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                            return label + ': ' + value + ' (' + percentage + ')';
+                        }"),
+                    ],
                 ],
             ],
         ];
