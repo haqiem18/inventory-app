@@ -99,7 +99,7 @@ class StatsOverview extends BaseWidget
             // Jika ada kolom branch_id di stock_batches
             if (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'branch_id')) {
                 $lowStockQuery->where('branch_id', $branchId);
-            }
+            } 
             // Jika terhubung melalui stock_mutation
             elseif (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'stock_mutation_id')) {
                 $lowStockQuery->whereHas('stockMutation', function ($q) use ($branchId) {
