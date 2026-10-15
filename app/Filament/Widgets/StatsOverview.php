@@ -119,7 +119,7 @@ class StatsOverview extends BaseWidget
                     $join->on('stock_batches.stock_mutation_id', '=', 'stock_mutations.id')
                          ->where('stock_mutations.branch_id', '=', $branchId);
                 })
-                ->where('stock_batches.quantity_remaining', '<=', 5)
+                ->where('stock_batches.quantity_remaining', '<=', 10)
                 ->where('stock_batches.quantity_remaining', '>', 0)
                 ->count();
         }
