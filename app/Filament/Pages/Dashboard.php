@@ -3,8 +3,9 @@
 namespace App\Filament\Pages;
 
 use Filament\Pages\Dashboard as BaseDashboard;
+use BackedEnum;
 
 class Dashboard extends BaseDashboard
 {
-    protected static $navigationIcon = 'heroicon-o-squares-2x2';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-squares-2x2';
 }
