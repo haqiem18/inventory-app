@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Auth;
 class ProductStockResource extends Resource
 {
     protected static ?string $model = ProductStock::class;
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCube;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::ArchiveBox;
     protected static ?string $navigationLabel = 'Manajemen Stok';
     protected static ?string $pluralModelLabel = 'Manajemen Stok';
     public static function form(Schema $schema): Schema
