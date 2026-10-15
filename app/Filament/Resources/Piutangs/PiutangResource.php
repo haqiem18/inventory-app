@@ -55,6 +55,7 @@ class PiutangResource extends Resource
                 // 1. KOLOM TOTAL TAGIHAN
                 TextColumn::make('subtotal')
                     ->label('Total Tagihan')
+                    ->state(fn($record) => ($record->price ?? 0) * ($record->quantity ?? 0)) // <-- Tambahkan baris ini agar sinkron
                     ->summarize(
                         Summarizer::make()
                             ->using(fn($query) => $query->sum(DB::raw('price * quantity')))
