@@ -52,6 +52,8 @@ class HutangResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->striped() // Membuat baris tabel selang-seling warna agar tidak polos
+            ->extraAttributes(['class' => 'shadow-sm rounded-xl overflow-hidden border border-gray-200 bg-white'])
             ->columns([
                 TextColumn::make('reference_number')->label('No. Nota')->sortable(),
                 TextColumn::make('mutation_date')->label('Tanggal')->date(),
