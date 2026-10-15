@@ -96,14 +96,16 @@ class StatsOverview extends BaseWidget
         $lowStockQuery = StockBatch::where('quantity_remaining', '<=', 5);
 
         if ($branchId) {
-            // Jika ada kolom branch_id di stock_batches
+            // Cek apakah tabel stock_batches punya kolom branch_id
             if (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'branch_id')) {
                 $lowStockQuery->where('branch_id', $branchId);
             } 
-            // Jika terhubung melalui stock_mutation
+            // Jika tidak, filter berdasarkan stock_mutation yang memiliki branch_id
             elseif (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'stock_mutation_id')) {
-                $lowStockQuery->whereHas('stockMutation', function ($q) use ($branchId) {
-                    $q->where('branch_id', $branchId);
+                $lowStockQuery->whereIn('stock_mutation_id', function ($query) use ($branchId) {
+                    $query->select('id')
+                          ->from('stock_mutations')
+                          ->where('branch_id', $branchId);
                 });
             } else {
                 $lowStockQuery->whereRaw('1 = 0');
@@ -113,7 +115,7 @@ class StatsOverview extends BaseWidget
         $lowStockCount = $lowStockQuery->count();
 
         $stats[] = Stat::make('Stok Menipis', $lowStockCount . ' Item')
-            ->description('Batch stok tersisa <= 5 unit')
+            ->description($isAdminCabang ? 'Stok menipis di cabang Anda' : 'Batch stok tersisa <= 5 unit')
             ->descriptionIcon('heroicon-m-exclamation-triangle')
             ->color($lowStockCount > 0 ? 'danger' : 'success')
             ->chart([3, 2, 4, 3, 5, 2, $lowStockCount]);
