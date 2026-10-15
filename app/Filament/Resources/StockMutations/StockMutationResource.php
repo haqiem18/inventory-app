@@ -21,7 +21,7 @@ class StockMutationResource extends Resource
 {
     protected static ?string $model = StockMutation::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowDownOnSquareStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::ArrowDownOnSquareStack;
     protected static UnitEnum|string|null $navigationGroup = 'Operasional';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?string $pluralModelLabel = 'Barang Masuk'; // Mengubah judul teks utama di halaman index/list

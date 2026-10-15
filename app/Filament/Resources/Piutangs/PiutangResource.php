@@ -30,7 +30,7 @@ class PiutangResource extends Resource
 {
     protected static ?string $model = StockMutation::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::Wallet;
     protected static UnitEnum|string|null $navigationGroup = 'Keuangan';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?string $pluralModelLabel = 'Laporan Piutang';
