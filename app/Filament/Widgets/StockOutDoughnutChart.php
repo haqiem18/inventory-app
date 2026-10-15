@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\StockMutation;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Js;
 
 class StockOutDoughnutChart extends ChartWidget
 {
@@ -34,6 +35,25 @@ class StockOutDoughnutChart extends ChartWidget
                 ],
             ],
             'labels' => ['Produksi', 'Penjualan', 'Retur', 'Mutasi Cabang'],
+        ];
+    }
+
+    protected function getOptions(): ?array
+    {
+        return [
+            'plugins' => [
+                'tooltip' => [
+                    'callbacks' => [
+                        'label' => Js::from("function(context) {
+                            let label = context.label || '';
+                            let value = context.parsed || 0;
+                            let total = context.chart._metasets[context.datasetIndex].total;
+                            let percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                            return label + ': ' + value + ' (' + percentage + ')';
+                        }"),
+                    ],
+                ],
+            ],
         ];
     }
 
