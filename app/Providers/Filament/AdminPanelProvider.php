@@ -31,6 +31,28 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Rose,
             ])
+            // TAMBAHKAN KODE INI UNTUK MEMPERCANTIK TABEL & HEADER
+            ->renderHook(
+                'panels::body.end',
+                fn (): string => '<style>
+                    /* Latar belakang header tabel agar tidak polos */
+                    .fi-ta-header-cell {
+                        background-color: #f1f5f9 !important; 
+                        border-bottom: 2px solid #cbd5e1 !important;
+                    }
+                    .fi-ta-header-cell span {
+                        font-weight: 600 !important;
+                        color: #1e293b !important;
+                    }
+                    /* Efek sorot (hover) halus pada baris tabel */
+                    .fi-ta-row {
+                        transition: background-color 0.15s ease;
+                    }
+                    .fi-ta-row:hover {
+                        background-color: #f8fafc !important;
+                    }
+                </style>'
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
