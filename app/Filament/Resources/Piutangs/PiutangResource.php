@@ -55,7 +55,6 @@ class PiutangResource extends Resource
                 // 1. KOLOM TOTAL TAGIHAN
                 TextColumn::make('subtotal')
                     ->label('Total Tagihan')
-                    ->state(fn($record) => $record->price * $record->quantity)
                     ->summarize(
                         Summarizer::make()
                             ->using(fn($query) => $query->sum(DB::raw('price * quantity')))
@@ -77,12 +76,13 @@ class PiutangResource extends Resource
                     )
                     ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.')),
 
-                // 3. KOLOM SISA HUTANG (Gunakan kode ini agar stabil)
+                // 3. KOLOM SISA HUTANG/PIUTANG
                 TextColumn::make('sisa_hutang')
-                    ->label('Sisa Hutang')
+                    ->label('Sisa Piutang')
                     ->state(function ($record) {
                         if ($record->payment_status === 'lunas') return 0;
-                        return ($record->price * $record->quantity) - $record->debtPayments()->sum('amount_paid');
+                        $tagihan = ($record->price ?? 0) * ($record->quantity ?? 0);
+                        return $tagihan - $record->debtPayments()->sum('amount_paid');
                     })
                     ->color(fn($state) => $state > 0 ? 'danger' : 'success')
                     ->weight('bold')
@@ -90,9 +90,7 @@ class PiutangResource extends Resource
                         Summarizer::make()
                             ->label('')
                             ->using(function ($query) {
-                                // Ambil semua ID transaksi yang statusnya 'hutang' saja agar summary akurat
                                 $query->where('payment_status', 'hutang');
-
                                 $ids = $query->pluck('id');
 
                                 $totalTagihan = $query->sum(DB::raw('price * quantity'));
@@ -128,7 +126,18 @@ class PiutangResource extends Resource
                             ->label('Jumlah Pembayaran')
                             ->numeric()
                             ->prefix('Rp')
-                            ->required(),
+                            ->required()
+                            ->rules([
+                                fn ($record) => function ($attribute, $value, $fail) use ($record) {
+                                    $tagihan = ($record->price ?? 0) * ($record->quantity ?? 0);
+                                    $terbayar = $record->debtPayments()->sum('amount_paid');
+                                    $sisaPiutang = $tagihan - $terbayar;
+
+                                    if ($value > $sisaPiutang) {
+                                        $fail('Jumlah pembayaran melebihi sisa piutang (Sisa saat ini: Rp ' . number_format($sisaPiutang, 0, ',', '.') . ').');
+                                    }
+                                },
+                            ]),
                         DatePicker::make('payment_date')
                             ->label('Tanggal Pembayaran')
                             ->default(now())
@@ -140,12 +149,13 @@ class PiutangResource extends Resource
                             'payment_date' => $data['payment_date'],
                         ]);
 
-                        $totalTagihan = $record->price * $record->quantity;
+                        $totalTagihan = ($record->price ?? 0) * ($record->quantity ?? 0);
                         $totalTerbayar = $record->debtPayments()->sum('amount_paid');
 
                         if ($totalTerbayar >= $totalTagihan) {
                             $record->update(['payment_status' => 'lunas']);
                         }
+                        
                         Notification::make()
                             ->title('Pembayaran Berhasil')
                             ->body('Pembayaran sebesar Rp ' . number_format($data['amount_paid'], 0, ',', '.') . ' telah dicatat.')
@@ -190,7 +200,6 @@ class PiutangResource extends Resource
             ]);
     }
 
-    // Di dalam PiutangResource.php
     public static function shouldRegisterNavigation(): bool
     {
         return Auth::user()->role === 'super_admin';
@@ -205,9 +214,6 @@ class PiutangResource extends Resource
 
         if (auth()->check()) {
             $user = auth()->user();
-
-            // Asumsi: Anda memiliki kolom 'role' di tabel users
-            // Ubah 'pusat' atau 'super_admin' sesuai dengan nilai yang tersimpan di database Anda
             $isAdminPusat = in_array($user->role, ['super_admin', 'pusat']);
 
             if (!$isAdminPusat) {
