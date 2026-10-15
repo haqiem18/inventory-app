@@ -26,7 +26,7 @@ class StatsOverview extends BaseWidget
             $mutationsHutang = StockMutation::where('type', 'Masuk')
                 ->where(function ($query) {
                     $query->where('payment_status', '!=', 'lunas')
-                        ->orWhereNull('payment_status');
+                          ->orWhereNull('payment_status');
                 })
                 ->get();
 
@@ -54,7 +54,7 @@ class StatsOverview extends BaseWidget
         $queryPiutang = StockMutation::where('sub_type', 'penjualan')
             ->where(function ($query) {
                 $query->where('payment_status', '!=', 'lunas')
-                    ->orWhereNull('payment_status');
+                      ->orWhereNull('payment_status');
             });
 
         if ($branchId) {
@@ -92,40 +92,15 @@ class StatsOverview extends BaseWidget
                 ->chart([5, 6, 7, 8, 9, 10, 12]);
         }
 
-        // 4. HITUNG STOK MENIPIS (Low Stock Alert - Dinamis Pusat & Cabang)
-        $lowStockQuery = StockBatch::where('quantity_remaining', '<=', 5)
-            ->where('quantity_remaining', '>', 0);
-
-        if ($branchId) {
-            $mutationFK = null;
-            if (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'stock_mutation_id')) {
-                $mutationFK = 'stock_mutation_id';
-            } elseif (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'mutation_id')) {
-                $mutationFK = 'mutation_id';
-            }
-
-            if ($mutationFK) {
-                $lowStockQuery->whereIn($mutationFK, function ($query) use ($branchId) {
-                    $query->select('id')
-                          ->from('stock_mutations')
-                          ->where('branch_id', $branchId);
-                });
-            } elseif (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'branch_id')) {
-                $lowStockQuery->where('branch_id', $branchId);
-            } else {
-                // Fallback menggunakan DB Join langsung jika struktur relasi berbeda
-                $lowStockQuery = DB::table('stock_batches')
-                    ->join('stock_mutations', 'stock_batches.stock_mutation_id', '=', 'stock_mutations.id')
-                    ->where('stock_mutations.branch_id', $branchId)
-                    ->where('stock_batches.quantity_remaining', '<=', 5)
-                    ->where('stock_batches.quantity_remaining', '>', 0);
-            }
+        // 4. HITUNG STOK MENIPIS (Low Stock Alert)
+        $lowStockQuery = StockBatch::where('quantity_remaining', '<=', 5);
+        if ($branchId && in_array('branch_id', \Illuminate\Support\Facades\Schema::getColumnListing('stock_batches'))) {
+            $lowStockQuery->where('branch_id', $branchId);
         }
-
-        $lowStockCount = is_int($lowStockQuery) ? $lowStockQuery : $lowStockQuery->count();
+        $lowStockCount = $lowStockQuery->count();
 
         $stats[] = Stat::make('Stok Menipis', $lowStockCount . ' Item')
-            ->description($isAdminCabang ? 'Stok menipis di cabang Anda' : 'Batch stok tersisa <= 5 unit')
+            ->description('Batch stok tersisa <= 5 unit')
             ->descriptionIcon('heroicon-m-exclamation-triangle')
             ->color($lowStockCount > 0 ? 'danger' : 'success')
             ->chart([3, 2, 4, 3, 5, 2, $lowStockCount]);
