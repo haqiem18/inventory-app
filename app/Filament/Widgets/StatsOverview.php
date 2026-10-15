@@ -8,7 +8,6 @@ use App\Models\StockMutation;
 use App\Models\StockBatch;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
 
 class StatsOverview extends BaseWidget
 {
@@ -93,16 +92,20 @@ class StatsOverview extends BaseWidget
                 ->chart([5, 6, 7, 8, 9, 10, 12]);
         }
 
-        // 4. HITUNG STOK MENIPIS (Low Stock Alert) - Terfilter Cabang
+        // 4. HITUNG STOK MENIPIS (Low Stock Alert) - Sesuai Role User
         $lowStockQuery = StockBatch::where('quantity_remaining', '<=', 5);
 
+        // Jika admin cabang, filter melalui relasi produk/mutasi cabang jika ada
         if ($branchId) {
-            if (Schema::hasColumn('stock_batches', 'branch_id')) {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'branch_id')) {
                 $lowStockQuery->where('branch_id', $branchId);
-            } elseif (method_exists(StockBatch::class, 'product') || Schema::hasColumn('stock_batches', 'product_id')) {
+            } elseif (method_exists(StockBatch::class, 'product') || \Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'product_id')) {
                 $lowStockQuery->whereHas('product', function ($q) use ($branchId) {
                     $q->where('branch_id', $branchId);
                 });
+            } else {
+                // Fallback jika tidak ada relasi cabang langsung, batasi query agar tidak error kosong
+                $lowStockQuery->whereRaw('1 = 0');
             }
         }
 
