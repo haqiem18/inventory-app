@@ -20,7 +20,7 @@ class SalesPersonResource extends Resource
 {
     protected static ?string $model = SalesPerson::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArchiveBoxXMark;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::Identification;
     protected static UnitEnum|string|null $navigationGroup = 'Master Data';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?string $pluralModelLabel = 'Sales'; // Mengubah judul teks utama di halaman index/list

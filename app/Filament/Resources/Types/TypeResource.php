@@ -20,7 +20,7 @@ class TypeResource extends Resource
 {
     protected static ?string $model = Type::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::Tag;
     protected static UnitEnum|string|null $navigationGroup = 'Master Data';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?string $pluralModelLabel = 'Jenis'; // Mengubah judul teks utama di halaman index/list

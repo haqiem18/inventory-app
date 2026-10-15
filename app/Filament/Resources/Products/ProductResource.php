@@ -20,7 +20,7 @@ class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArchiveBoxXMark;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::Cube;
     protected static UnitEnum|string|null $navigationGroup = 'Master Data';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?string $pluralModelLabel = 'Barang'; // Mengubah judul teks utama di halaman index/list

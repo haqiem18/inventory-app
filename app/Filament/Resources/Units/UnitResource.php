@@ -20,7 +20,7 @@ class UnitResource extends Resource
 {
     protected static ?string $model = Unit::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::Scale;
     protected static UnitEnum|string|null $navigationGroup = 'Master Data';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?string $pluralModelLabel = 'Satuan'; // Mengubah judul teks utama di halaman index/list

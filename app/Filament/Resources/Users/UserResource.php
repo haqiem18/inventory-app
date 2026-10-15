@@ -20,7 +20,7 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserPlus;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::UserPlus;
     protected static UnitEnum|string|null $navigationGroup = 'Master Data';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?string $pluralModelLabel = 'User'; // Mengubah judul teks utama di halaman index/list
