@@ -29,7 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->brandName(fn () => Auth::user()?->branch?->name ?? 'JB Printing Apps')
             ->colors([
-                'primary' => Color::Rose,
+                'primary' => Color::Indigo,
             ])
             // TAMBAHKAN KODE INI UNTUK MEMPERCANTIK TABEL & HEADER
             ->renderHook(
