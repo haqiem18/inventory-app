@@ -92,41 +92,40 @@ class StatsOverview extends BaseWidget
                 ->chart([5, 6, 7, 8, 9, 10, 12]);
         }
 
-        // 4. HITUNG STOK MENIPIS (Berdasarkan Rekap Mutasi Masuk - Keluar per Produk & Cabang)
-        $lowStockCount = 0;
+        // 4. HITUNG STOK MENIPIS (Low Stock Alert - Dinamis Pusat & Cabang)
+        $lowStockQuery = StockBatch::where('quantity_remaining', '<=', 5)
+            ->where('quantity_remaining', '>', 0);
 
-        // Ambil daftar produk unik di cabang tersebut
-        $productsQuery = StockMutation::query();
         if ($branchId) {
-            $productsQuery->where('branch_id', $branchId);
-        }
-        $productIds = $productsQuery->whereNotNull('product_id')->distinct()->pluck('product_id');
+            $mutationFK = null;
+            if (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'stock_mutation_id')) {
+                $mutationFK = 'stock_mutation_id';
+            } elseif (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'mutation_id')) {
+                $mutationFK = 'mutation_id';
+            }
 
-        foreach ($productIds as $prodId) {
-            // Hitung total masuk
-            $masuk = StockMutation::where('product_id', $prodId)
-                ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
-                ->where(function($q) {
-                    $q->where('type', 'Masuk')->orWhere('type', 'IN');
-                })->sum('quantity');
-
-            // Hitung total keluar
-            $keluar = StockMutation::where('product_id', $prodId)
-                ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
-                ->where(function($q) {
-                    $q->where('type', 'Keluar')->orWhere('type', 'OUT');
-                })->sum('quantity');
-
-            $sisaStok = $masuk - $keluar;
-
-            // Jika sisa stok masuk kategori menipis (<= 5 dan > 0)
-            if ($sisaStok <= 5 && $sisaStok > 0) {
-                $lowStockCount++;
+            if ($mutationFK) {
+                $lowStockQuery->whereIn($mutationFK, function ($query) use ($branchId) {
+                    $query->select('id')
+                          ->from('stock_mutations')
+                          ->where('branch_id', $branchId);
+                });
+            } elseif (\Illuminate\Support\Facades\Schema::hasColumn('stock_batches', 'branch_id')) {
+                $lowStockQuery->where('branch_id', $branchId);
+            } else {
+                // Fallback menggunakan DB Join langsung jika struktur relasi berbeda
+                $lowStockQuery = DB::table('stock_batches')
+                    ->join('stock_mutations', 'stock_batches.stock_mutation_id', '=', 'stock_mutations.id')
+                    ->where('stock_mutations.branch_id', $branchId)
+                    ->where('stock_batches.quantity_remaining', '<=', 5)
+                    ->where('stock_batches.quantity_remaining', '>', 0);
             }
         }
 
+        $lowStockCount = is_int($lowStockQuery) ? $lowStockQuery : $lowStockQuery->count();
+
         $stats[] = Stat::make('Stok Menipis', $lowStockCount . ' Item')
-            ->description($isAdminCabang ? 'Stok menipis di cabang Anda' : 'Total item stok sisa <= 5 unit')
+            ->description($isAdminCabang ? 'Stok menipis di cabang Anda' : 'Batch stok tersisa <= 5 unit')
             ->descriptionIcon('heroicon-m-exclamation-triangle')
             ->color($lowStockCount > 0 ? 'danger' : 'success')
             ->chart([3, 2, 4, 3, 5, 2, $lowStockCount]);
