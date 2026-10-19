@@ -141,7 +141,7 @@ class InvoiceController extends Controller
             $sumSisa = $sumTagihan - $sumTerbayar;
 
             $totals = [
-                'colspan' => 5,
+                'colspan' => 6,
                 'values' => [
                     'Rp ' . number_format($sumTagihan, 0, ',', '.'),
                     'Rp ' . number_format($sumTerbayar, 0, ',', '.'),
@@ -179,7 +179,7 @@ class InvoiceController extends Controller
             $sumTotalHarga = $records->sum(fn($i) => $i->subtotal ?? (($i->quantity ?? 0) * ($i->purchase_price ?? 0)));
 
             $totals = [
-                'colspan' => 5,
+                'colspan' => 6,
                 'values' => [
                     $sumQty,
                     '',
@@ -217,11 +217,11 @@ class InvoiceController extends Controller
             $sumSubtotal = $records->sum(fn($i) => $i->subtotal ?? (($i->quantity ?? 0) * ($i->price ?? 0)));
 
             $totals = [
-                'colspan' => 6,
+                'colspan' => 7, // Melewati 7 kolom (No, No Ref, Tanggal, Nama Barang, Cabang Asal, Keperluan, Status)
                 'values' => [
-                    $sumQty,
-                    '',
-                    'Rp ' . number_format($sumSubtotal, 0, ',', '.')
+                    $sumQty,                                              // Kolom Qty
+                    '',                                                   // Kolom Harga Satuan
+                    'Rp ' . number_format($sumSubtotal, 0, ',', '.')      // Kolom Total Biaya
                 ]
             ];
 
@@ -256,7 +256,7 @@ class InvoiceController extends Controller
             $sumTotalHarga = $records->sum(fn($i) => $i->subtotal ?? (($i->quantity ?? 0) * ($i->price ?? 0)));
 
             $totals = [
-                'colspan' => 5,
+                'colspan' => 6,
                 'values' => [
                     $sumQty,
                     '',
@@ -296,7 +296,7 @@ class InvoiceController extends Controller
             $sumTotalHarga = $records->sum(fn($i) => $i->subtotal ?? (($i->quantity ?? 0) * ($i->price ?? 0)));
 
             $totals = [
-                'colspan' => 5,
+                'colspan' => 6,
                 'values' => [
                     $sumQty,
                     '',
