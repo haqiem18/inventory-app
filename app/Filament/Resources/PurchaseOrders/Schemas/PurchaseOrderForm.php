@@ -128,15 +128,12 @@ class PurchaseOrderForm
 
     /**
      * Helper untuk mengecek apakah produk termasuk kategori Kain.
-     * Sesuaikan pengecekan ini dengan kolom di database produk Anda (misal: category_id, type, atau nama).
      */
     protected static function isFabric($productId): bool
     {
         if (!$productId) return false;
         $product = Product::find($productId);
         
-        // Contoh asumsi: dicek dari nama produk mengandung kata "kain" 
-        // Atau jika ada kolom kategori, misal: $product->category->name === 'Kain'
         return $product && (
             stripos($product->name, 'kain') !== false || 
             stripos($product->name, 'roll') !== false
