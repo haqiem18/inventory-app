@@ -41,7 +41,6 @@ class InvoiceController extends Controller
                     $totalTagihan = $item->subtotal ?? $item->total ?? 0;
                 }
 
-                // Jika status lunas, samakan dengan Filament (Terbayar tampil 0 atau sesuai paid_amount jika tidak dihitung cicilan)
                 $terbayar = 0;
                 if ($item->payment_status !== 'lunas') {
                     if (method_exists($item, 'debtPayments')) {
@@ -70,13 +69,12 @@ class InvoiceController extends Controller
                 ];
             };
 
-            // Ambil data dan hitung baris summary agar sinkron 100% dengan Filament
             $records = $query->get();
             $sumTagihan = $records->sum(fn($i) => (($i->price ?? 0) * ($i->quantity ?? 0)) ?: ($i->subtotal ?? $i->total ?? 0));
 
             $sumTerbayar = $records->sum(function ($i) {
                 if (($i->payment_status ?? 'hutang') === 'lunas') {
-                    return 0; // Sesuai dengan panel Filament di mana transaksi lunas nilai terbayarnya dihitung 0 / tidak masuk akumulasi cicilan
+                    return 0;
                 }
                 $paid = 0;
                 if (method_exists($i, 'debtPayments')) {
@@ -114,15 +112,10 @@ class InvoiceController extends Controller
 
             $rowCallback = function ($item) {
                 $totalTagihan = $item->subtotal ?? $item->total ?? 0;
-
-                // Menjumlahkan amount_paid dari relasi debtPayments
                 $terbayar = $item->debtPayments()->sum('amount_paid') ?? 0;
-
-                // Fallback jika paid_amount di stock_mutations juga terisi
                 if ($terbayar == 0) {
                     $terbayar = $item->paid_amount ?? 0;
                 }
-
                 $sisa = $totalTagihan - $terbayar;
 
                 return [
@@ -137,10 +130,8 @@ class InvoiceController extends Controller
                 ];
             };
 
-            // Ambil data untuk baris summary
             $records = $query->get();
             $sumTagihan = $records->sum(fn($i) => $i->subtotal ?? $i->total ?? 0);
-
             $sumTerbayar = $records->sum(function ($i) {
                 $paid = $i->debtPayments()->sum('amount_paid') ?? 0;
                 if ($paid == 0) {
@@ -148,7 +139,6 @@ class InvoiceController extends Controller
                 }
                 return $paid;
             });
-
             $sumSisa = $sumTagihan - $sumTerbayar;
 
             $totals = [
@@ -167,15 +157,7 @@ class InvoiceController extends Controller
             $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Supplier', 'Qty', 'Harga Beli', 'Total Harga'];
 
             $rowCallback = function ($item) {
-                $branchName = '-';
-                if (is_object($item->branch)) {
-                    $branchName = $item->branch->name ?? '-';
-                } elseif (is_array($item->branch)) {
-                    $branchName = $item->branch['name'] ?? '-';
-                } else {
-                    $branchName = $item->branch ?? '-';
-                }
-
+                $branchName = is_object($item->branch) ? ($item->branch->name ?? '-') : ($item->branch ?? '-');
                 $qty = $item->quantity ?? 0;
                 $hargaBeli = $item->purchase_price ?? 0;
                 $totalHarga = $item->subtotal ?? ($qty * $hargaBeli);
@@ -192,17 +174,55 @@ class InvoiceController extends Controller
                 ];
             };
 
-            // Ambil data dan hitung baris summary untuk laporan barang masuk
             $records = $query->get();
             $sumQty = $records->sum(fn($i) => $i->quantity ?? 0);
             $sumTotalHarga = $records->sum(fn($i) => $i->subtotal ?? (($i->quantity ?? 0) * ($i->purchase_price ?? 0)));
 
             $totals = [
-                'colspan' => 6, // Mengatur jumlah kolom yang dilewati sebelum kolom Qty
+                'colspan' => 5,
                 'values' => [
-                    $sumQty,                                    // Masuk ke kolom Qty
-                    '',                                         // Masuk ke kolom Harga Beli (dikosongkan)
-                    'Rp ' . number_format($sumTotalHarga, 0, ',', '.') // Masuk ke kolom Total Harga
+                    $sumQty,
+                    '',
+                    'Rp ' . number_format($sumTotalHarga, 0, ',', '.')
+                ]
+            ];
+
+            return view('invoices.print-report', compact('title', 'columns', 'records', 'rowCallback', 'totals'));
+
+            // --- TAMBAHAN KONDISI KHUSUS LAPORAN PENGGUNAAN / PRODUKSI ---
+        } elseif ($type == 'penggunaan' || $type == 'produksi' || $type == 'operasional') {
+            $title = 'Laporan Penggunaan';
+            $columns = ['No. Ref', 'Tanggal', 'Nama Barang', 'Cabang Asal', 'Keperluan', 'Status', 'Qty', 'Harga Satuan', 'Total Biaya'];
+
+            $rowCallback = function ($item) {
+                $branchName = is_object($item->branch) ? ($item->branch->name ?? '-') : ($item->branch ?? '-');
+                $qty = $item->quantity ?? 0;
+                $price = $item->price ?? 0;
+                $subtotal = $item->subtotal ?? ($qty * $price);
+
+                return [
+                    $item->reference_number ?? '-',
+                    $item->mutation_date ?? '-',
+                    $item->product->name ?? '-',
+                    $branchName,
+                    ucfirst($item->sub_type ?? '-'),
+                    $item->status ?? '-',
+                    $qty,
+                    'Rp ' . number_format($price, 0, ',', '.'),
+                    'Rp ' . number_format($subtotal, 0, ',', '.')
+                ];
+            };
+
+            $records = $query->get();
+            $sumQty = $records->sum(fn($i) => $i->quantity ?? 0);
+            $sumSubtotal = $records->sum(fn($i) => $i->subtotal ?? (($i->quantity ?? 0) * ($i->price ?? 0)));
+
+            $totals = [
+                'colspan' => 6, // Melewati 6 kolom pertama (No Ref, Tanggal, Nama Barang, Cabang Asal, Keperluan, Status)
+                'values' => [
+                    $sumQty,
+                    '',
+                    'Rp ' . number_format($sumSubtotal, 0, ',', '.')
                 ]
             ];
 
@@ -212,15 +232,7 @@ class InvoiceController extends Controller
             $columns = ['No. Ref', 'Tanggal', 'Barang', 'Cabang', 'Customer', 'Qty', 'Harga Beli', 'Harga Jual', 'Total'];
 
             $rowCallback = function ($item) {
-                $branchName = '-';
-                if (is_object($item->branch)) {
-                    $branchName = $item->branch->name ?? '-';
-                } elseif (is_array($item->branch)) {
-                    $branchName = $item->branch['name'] ?? '-';
-                } else {
-                    $branchName = $item->branch ?? '-';
-                }
-
+                $branchName = is_object($item->branch) ? ($item->branch->name ?? '-') : ($item->branch ?? '-');
                 $qty = $item->quantity ?? 0;
                 $hargaBeli = $item->purchase_price ?? 0;
                 $hargaJual = $item->price ?? 0;
@@ -239,19 +251,17 @@ class InvoiceController extends Controller
                 ];
             };
 
-            // Ambil data dan hitung baris summary untuk laporan barang keluar
             $records = $query->get();
             $sumQty = $records->sum(fn($i) => $i->quantity ?? 0);
             $sumTotalHarga = $records->sum(fn($i) => $i->subtotal ?? (($i->quantity ?? 0) * ($i->price ?? 0)));
 
             $totals = [
-                'colspan' => 6, // Dilewati sampai kolom Customer (No. Ref, Tanggal, Barang, Cabang, Customer)
+                'colspan' => 5,
                 'values' => [
                     $sumQty,
-                    // Masuk ke kolom Qty
-                    '',                                         // Kosong untuk kolom Harga Beli
-                    '',                                         // Kosong untuk kolom Harga Jual
-                    'Rp ' . number_format($sumTotalHarga, 0, ',', '.') // Masuk ke kolom Total
+                    '',
+                    '',
+                    'Rp ' . number_format($sumTotalHarga, 0, ',', '.')
                 ]
             ];
 
