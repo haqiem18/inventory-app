@@ -10,7 +10,7 @@
         <h3 style="margin: 5px 0;">Laporan Hutang</h3>
     @elseif(request('type') == 'stock-in' || request('type') == 'IN')
         <h3 style="margin: 5px 0;">Laporan Data Barang Masuk</h3>
-    @elseif(request('type') == 'penggunaan')
+    @elseif(in_array(request('type'), ['penggunaan', 'produksi', 'operasional']))
         <h3 style="margin: 5px 0;">Laporan Penggunaan</h3>
     @else
         <h3 style="margin: 5px 0;">Laporan Data Barang Keluar</h3>
@@ -51,7 +51,7 @@
                 <th style="padding: 8px;">Qty</th>
                 <th style="padding: 8px;">Harga Beli</th>
                 <th style="padding: 8px;">Total Harga</th>
-            @elseif(request('type') == 'penggunaan')
+            @elseif(in_array(request('type'), ['penggunaan', 'produksi', 'operasional']))
                 <th style="padding: 8px;">No. Ref</th>
                 <th style="padding: 8px;">Tanggal</th>
                 <th style="padding: 8px;">Nama Barang</th>
@@ -109,16 +109,16 @@
                 <td style="padding: 6px;">{{ $item->qty ?? 0 }}</td>
                 <td style="padding: 6px;">Rp {{ number_format($item->harga_beli ?? 0, 0, ',', '.') }}</td>
                 <td style="padding: 6px;">Rp {{ number_format($item->total_harga ?? (($item->qty ?? 0) * ($item->harga_beli ?? 0)), 0, ',', '.') }}</td>
-            @elseif(request('type') == 'penggunaan')
-                <td style="padding: 6px;">{{ $item->reference_number ?? '-' }}</td>
-                <td style="padding: 6px;">{{ $item->mutation_date ?? '-' }}</td>
-                <td style="padding: 6px;">{{ $item->product->name ?? '-' }}</td>
-                <td style="padding: 6px;">{{ $item->branch->name ?? '-' }}</td>
-                <td style="padding: 6px;">{{ ucfirst($item->sub_type ?? '-') }}</td>
+            @elseif(in_array(request('type'), ['penggunaan', 'produksi', 'operasional']))
+                <td style="padding: 6px;">{{ $item->reference_number ?? $item->no_ref ?? '-' }}</td>
+                <td style="padding: 6px;">{{ $item->mutation_date ?? $item->tanggal ?? '-' }}</td>
+                <td style="padding: 6px;">{{ $item->product->name ?? $item->barang->name ?? '-' }}</td>
+                <td style="padding: 6px;">{{ $item->branch->name ?? $item->cabang ?? '-' }}</td>
+                <td style="padding: 6px;">{{ ucfirst($item->sub_type ?? $item->keperluan ?? '-') }}</td>
                 <td style="padding: 6px;">{{ $item->status ?? '-' }}</td>
-                <td style="padding: 6px; text-align: center;">{{ $item->quantity ?? 0 }}</td>
-                <td style="padding: 6px;">Rp {{ number_format($item->price ?? 0, 0, ',', '.') }}</td>
-                <td style="padding: 6px;">Rp {{ number_format($item->subtotal ?? 0, 0, ',', '.') }}</td>
+                <td style="padding: 6px; text-align: center;">{{ $item->quantity ?? $item->qty ?? 0 }}</td>
+                <td style="padding: 6px;">Rp {{ number_format($item->price ?? $item->harga_beli ?? 0, 0, ',', '.') }}</td>
+                <td style="padding: 6px;">Rp {{ number_format($item->subtotal ?? $item->total ?? 0, 0, ',', '.') }}</td>
             @else
                 <td style="padding: 6px;">{{ $item->no_ref ?? '-' }}</td>
                 <td style="padding: 6px;">{{ $item->tanggal ?? '-' }}</td>
