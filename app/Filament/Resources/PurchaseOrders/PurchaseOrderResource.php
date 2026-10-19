@@ -6,9 +6,10 @@ use App\Filament\Resources\PurchaseOrders\Pages\CreatePurchaseOrder;
 use App\Filament\Resources\PurchaseOrders\Pages\EditPurchaseOrder;
 use App\Filament\Resources\PurchaseOrders\Pages\ListPurchaseOrders;
 use App\Filament\Resources\PurchaseOrders\Schemas\PurchaseOrderForm;
-use App\Filament\Resources\PurchaseOrders\Tables\PurchaseOrdersTable; // <-- Pastikan ini di-import
+use App\Filament\Resources\PurchaseOrders\Tables\PurchaseOrdersTable;
 use App\Models\PurchaseOrder;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -18,7 +19,8 @@ class PurchaseOrderResource extends Resource
 {
     protected static ?string $model = PurchaseOrder::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::ClipboardDocumentList;
+    protected static UnitEnum|string|null $navigationGroup = 'Operasional';
 
     public static function form(Schema $schema): Schema
     {
@@ -27,7 +29,6 @@ class PurchaseOrderResource extends Resource
 
     public static function table(Table $table): Table
     {
-        // Panggil tabel dari class terpisah
         return PurchaseOrdersTable::configure($table);
     }
 
