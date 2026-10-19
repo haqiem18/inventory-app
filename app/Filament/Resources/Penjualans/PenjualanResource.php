@@ -39,7 +39,7 @@ class PenjualanResource extends Resource
     protected static ?string $modelLabel = 'Penjualan ';
     public static function shouldRegisterNavigation(): bool
     {
-        return false;
+        return Auth::user()->role === 'super_admin';
     }
     public static function canViewAny(): bool
     {
