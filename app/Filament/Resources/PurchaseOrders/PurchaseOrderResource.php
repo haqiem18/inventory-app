@@ -16,9 +16,9 @@ use Filament\Tables\Table;
 
 class PurchaseOrderResource extends Resource
 {
-    protected static $model = PurchaseOrder::class;
+    protected static ?string $model = PurchaseOrder::class;
 
-    protected static $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
     public static function form(Schema $schema): Schema
     {
