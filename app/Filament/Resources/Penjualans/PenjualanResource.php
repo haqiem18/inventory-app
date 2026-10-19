@@ -33,10 +33,10 @@ class PenjualanResource extends Resource
 {
     protected static ?string $model = StockMutation::class;
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUpOnSquareStack;
-    protected static UnitEnum|string|null $navigationGroup = 'Transaksi Cabang ';
+    protected static UnitEnum|string|null $navigationGroup = 'Keuangan';
     protected static ?string $recordTitleAttribute = 'reference_number';
-    protected static ?string $pluralModelLabel = 'Penjualan ';
-    protected static ?string $modelLabel = 'Penjualan ';
+    protected static ?string $pluralModelLabel = 'Laporan Penjualan ';
+    protected static ?string $modelLabel = 'Laporan Penjualan ';
     public static function shouldRegisterNavigation(): bool
     {
         return Auth::user()->role === 'super_admin';
