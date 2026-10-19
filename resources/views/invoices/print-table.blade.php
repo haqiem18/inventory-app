@@ -4,12 +4,14 @@
 <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;">
     <h2 style="margin: 0;">DC JB PRINTING</h2>
     
-    @if(request('type') == 'IN')
+    @if(request('type') == 'piutang')
         <h3 style="margin: 5px 0;">Laporan Piutang</h3>
     @elseif(request('type') == 'hutang')
         <h3 style="margin: 5px 0;">Laporan Hutang</h3>
-    @elseif(request('type') == 'stock-in' || request('type') == 'IN)
+    @elseif(request('type') == 'stock-in' || request('type') == 'IN')
         <h3 style="margin: 5px 0;">Laporan Data Barang Masuk</h3>
+    @elseif(request('type') == 'penggunaan')
+        <h3 style="margin: 5px 0;">Laporan Penggunaan</h3>
     @else
         <h3 style="margin: 5px 0;">Laporan Data Barang Keluar</h3>
     @endif
@@ -21,7 +23,7 @@
 <table border="1" style="width: 100%; border-collapse: collapse; font-size: 11px;">
     <thead>
         <tr style="background-color: #333; color: white;">
-            @if(request('type') == 'IN')
+            @if(request('type') == 'piutang')
                 <th style="padding: 8px;">No. Nota</th>
                 <th style="padding: 8px;">Tanggal</th>
                 <th style="padding: 8px;">Customer</th>
@@ -40,7 +42,7 @@
                 <th style="padding: 8px;">Terbayar</th>
                 <th style="padding: 8px;">Sisa Hutang</th>
                 <th style="padding: 8px;">Status</th>
-            @elseif(request('type') == 'IN' || request('type') == 'IN')
+            @elseif(request('type') == 'stock-in' || request('type') == 'IN')
                 <th style="padding: 8px;">No. Referensi</th>
                 <th style="padding: 8px;">Tanggal</th>
                 <th style="padding: 8px;">Barang</th>
@@ -49,6 +51,16 @@
                 <th style="padding: 8px;">Qty</th>
                 <th style="padding: 8px;">Harga Beli</th>
                 <th style="padding: 8px;">Total Harga</th>
+            @elseif(request('type') == 'penggunaan')
+                <th style="padding: 8px;">No. Ref</th>
+                <th style="padding: 8px;">Tanggal</th>
+                <th style="padding: 8px;">Nama Barang</th>
+                <th style="padding: 8px;">Cabang Asal</th>
+                <th style="padding: 8px;">Keperluan</th>
+                <th style="padding: 8px;">Status</th>
+                <th style="padding: 8px;">Qty</th>
+                <th style="padding: 8px;">Harga Satuan</th>
+                <th style="padding: 8px;">Total Biaya</th>
             @else
                 <th style="padding: 8px;">No. Ref</th>
                 <th style="padding: 8px;">Tanggal</th>
@@ -88,7 +100,7 @@
                 <td style="padding: 6px;">Rp {{ number_format($item->terbayar ?? 0, 0, ',', '.') }}</td>
                 <td style="padding: 6px;">Rp {{ number_format($item->sisa_hutang ?? 0, 0, ',', '.') }}</td>
                 <td style="padding: 6px;">{{ $item->status ?? '-' }}</td>
-            @elseif(request('type') == 'IN' || request('type') == 'IN')
+            @elseif(request('type') == 'stock-in' || request('type') == 'IN')
                 <td style="padding: 6px;">{{ $item->no_ref ?? '-' }}</td>
                 <td style="padding: 6px;">{{ $item->tanggal ?? '-' }}</td>
                 <td style="padding: 6px;">{{ $item->barang->name ?? $item->nama_barang ?? '-' }}</td>
@@ -97,6 +109,16 @@
                 <td style="padding: 6px;">{{ $item->qty ?? 0 }}</td>
                 <td style="padding: 6px;">Rp {{ number_format($item->harga_beli ?? 0, 0, ',', '.') }}</td>
                 <td style="padding: 6px;">Rp {{ number_format($item->total_harga ?? (($item->qty ?? 0) * ($item->harga_beli ?? 0)), 0, ',', '.') }}</td>
+            @elseif(request('type') == 'penggunaan')
+                <td style="padding: 6px;">{{ $item->reference_number ?? '-' }}</td>
+                <td style="padding: 6px;">{{ $item->mutation_date ?? '-' }}</td>
+                <td style="padding: 6px;">{{ $item->product->name ?? '-' }}</td>
+                <td style="padding: 6px;">{{ $item->branch->name ?? '-' }}</td>
+                <td style="padding: 6px;">{{ ucfirst($item->sub_type ?? '-') }}</td>
+                <td style="padding: 6px;">{{ $item->status ?? '-' }}</td>
+                <td style="padding: 6px; text-align: center;">{{ $item->quantity ?? 0 }}</td>
+                <td style="padding: 6px;">Rp {{ number_format($item->price ?? 0, 0, ',', '.') }}</td>
+                <td style="padding: 6px;">Rp {{ number_format($item->subtotal ?? 0, 0, ',', '.') }}</td>
             @else
                 <td style="padding: 6px;">{{ $item->no_ref ?? '-' }}</td>
                 <td style="padding: 6px;">{{ $item->tanggal ?? '-' }}</td>
