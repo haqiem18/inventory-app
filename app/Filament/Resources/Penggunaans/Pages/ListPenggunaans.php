@@ -10,6 +10,11 @@ class ListPenggunaans extends ListRecords
 {
     protected static string $resource = PenggunaanResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Laporan Penggunaan';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -31,8 +36,9 @@ class ListPenggunaans extends ListRecords
 
                     $records = $query->get();
 
+                    // Perbaikan penulisan array parameter rute cetak untuk Laporan Penggunaan
                     return redirect()->route('print.table', [
-                        'type' => 'sub_type', 'produksi', // <--- Ubah jadi 'piutang'
+                        'type' => 'penggunaan',
                         'ids' => $records->pluck('id')->toArray()
                     ]);
                 }),
