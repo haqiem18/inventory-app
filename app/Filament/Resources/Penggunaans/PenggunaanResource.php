@@ -53,9 +53,9 @@ class PenggunaanResource extends Resource
             });
         }
 
-        // Ubah dari sub_type menjadi memeriksa kolom 'purpose' atau jenis barang keluar internal
+        // Menyaring data transaksi barang keluar dengan sub_type penggunaan/produksi/operasional
         $query->where('type', 'OUT')
-            ->whereIn('purpose', ['Produksi', 'produksi', 'Operasional', 'operasional']);
+            ->whereIn('sub_type', ['produksi', 'operasional', 'penggunaan', 'Produksi', 'Operasional']);
 
         return $query;
     }
@@ -78,10 +78,11 @@ class PenggunaanResource extends Resource
                     ->description(fn($record): string => "SKU: " . ($record->product->sku ?? '-')),
                 TextColumn::make('branch.name')->label('Cabang Asal')->sortable(),
 
-                TextColumn::make('purpose')
+                TextColumn::make('sub_type')
                     ->label('Keperluan')
                     ->badge()
                     ->color('warning')
+                    ->formatStateUsing(fn($state) => ucfirst($state))
                     ->sortable(),
 
                 TextColumn::make('status')
