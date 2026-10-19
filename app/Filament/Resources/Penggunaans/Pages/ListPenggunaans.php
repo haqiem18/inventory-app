@@ -32,7 +32,7 @@ class ListPenggunaans extends ListRecords
                     $records = $query->get();
 
                     return redirect()->route('print.table', [
-                        'type' => 'sub_type', 'penggunaan', // <--- Ubah jadi 'piutang'
+                        'type' => 'sub_type', 'produksi', // <--- Ubah jadi 'piutang'
                         'ids' => $records->pluck('id')->toArray()
                     ]);
                 }),
