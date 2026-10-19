@@ -21,16 +21,20 @@ class PurchaseOrdersTable
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'pending' => 'warning',
                         'partial' => 'info',
                         'completed' => 'success',
                         'cancelled' => 'danger',
                     }),
+
                 TextColumn::make('total_amount')
                     ->label('Total Biaya')
-                    ->money('IDR')
-                    ->sortable(),
+                    ->money('IDR', locale: 'id_ID')
+                    ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.'))
+                    ->sortable()
+                    ->weight('bold'),
+
             ])
             ->filters([
                 //
