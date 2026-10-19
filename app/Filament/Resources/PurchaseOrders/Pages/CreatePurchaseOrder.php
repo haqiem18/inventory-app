@@ -24,6 +24,25 @@ class CreatePurchaseOrder extends CreateRecord
         return $data;
     }
 
+    public function getTitle(): string
+    {
+        return 'Tambah PO';
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction()
+                ->label('Simpan'),
+
+            $this->getCreateAnotherFormAction()
+                ->label('Simpan & Buat Lagi'),
+
+            $this->getCancelFormAction()
+                ->label('Batal'),
+        ];
+    }
+
     protected function getRedirectUrl(): string
     {
         // Mengarahkan kembali ke halaman index/tabel setelah berhasil simpan
