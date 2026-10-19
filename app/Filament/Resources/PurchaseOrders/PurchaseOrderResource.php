@@ -1,146 +1,49 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\PurchaseOrders;
 
-use App\Filament\Resources\PurchaseOrderResource\Pages;
+use App\Filament\Resources\PurchaseOrders\Pages\CreatePurchaseOrder;
+use App\Filament\Resources\PurchaseOrders\Pages\EditPurchaseOrder;
+use App\Filament\Resources\PurchaseOrders\Pages\ListPurchaseOrders;
+use App\Filament\Resources\PurchaseOrders\Schemas\PurchaseOrderForm;
+use App\Filament\Resources\PurchaseOrders\Tables\PurchaseOrdersTable; // <-- Pastikan ini di-import
 use App\Models\PurchaseOrder;
-use Filament\Forms;
-use Filament\Forms\Form;
+use BackedEnum;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
 class PurchaseOrderResource extends Resource
 {
-    protected static ?string $model = PurchaseOrder::class;
+    protected static $model = PurchaseOrder::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
-    protected static ?string $navigationLabel = 'Purchase Orders';
-    protected static ?string $navigationGroup = 'Operasional'; // Atau sesuaikan kategori sidebar Anda
+    protected static $navigationIcon = 'heroicon-o-document-text';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('Informasi Dokumen PO')
-                    ->schema([
-                        Forms\Components\TextInput::make('po_number')
-                            ->label('No. PO')
-                            ->default('PO/' . date('Ymd') . '/' . rand(100, 999))
-                            ->required()
-                            ->readOnly(),
-
-                        Forms\Components\Select::make('supplier_id')
-                            ->relationship('supplier', 'name')
-                            ->required()
-                            ->searchable()
-                            ->preload(),
-
-                        Forms\Components\Select::make('branch_id')
-                            ->relationship('branch', 'name')
-                            ->required()
-                            ->default(fn () => auth()->user()->branch_id),
-
-                        Forms\Components\DatePicker::make('order_date')
-                            ->label('Tanggal Pesan')
-                            ->default(now())
-                            ->required(),
-
-                        Forms\Components\Select::make('status')
-                            ->options([
-                                'draft' => 'Draft',
-                                'sent' => 'Dikirim ke Supplier',
-                                'confirmed' => 'Dikonfirmasi Supplier',
-                                'cancelled' => 'Dibatalkan',
-                            ])
-                            ->default('draft')
-                            ->required(),
-                    ])->columns(2),
-
-                Forms\Components\Section::make('Rincian Barang yang Dipesan')
-                    ->schema([
-                        Forms\Components\Repeater::make('items')
-                            ->relationship() // Pastikan relasi items() ada di Model PurchaseOrder
-                            ->schema([
-                                Forms\Components\Select::make('product_id')
-                                    ->label('Barang / Bahan')
-                                    ->relationship('product', 'name')
-                                    ->required()
-                                    ->columnSpan(4),
-
-                                Forms\Components\TextInput::make('quantity')
-                                    ->label('Qty')
-                                    ->numeric()
-                                    ->default(1)
-                                    ->required()
-                                    ->columnSpan(2),
-
-                                Forms\Components\TextInput::make('unit_price')
-                                    ->label('Est. Harga Satuan')
-                                    ->numeric()
-                                    ->prefix('Rp')
-                                    ->required()
-                                    ->columnSpan(3),
-                            ])
-                            ->columns(9)
-                            ->defaultItems(1),
-                    ]),
-            ]);
+        return PurchaseOrderForm::configure($schema);
     }
 
     public static function table(Table $table): Table
     {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('po_number')
-                    ->label('No. PO')
-                    ->searchable()
-                    ->sortable()
-                    ->weight('bold'),
+        // Panggil tabel dari class terpisah
+        return PurchaseOrdersTable::configure($table);
+    }
 
-                Tables\Columns\TextColumn::make('supplier.name')
-                    ->label('Supplier')
-                    ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('branch.name')
-                    ->label('Cabang')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('order_date')
-                    ->label('Tanggal')
-                    ->date('d M Y')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'draft' => 'gray',
-                        'sent' => 'info',
-                        'confirmed' => 'success',
-                        'cancelled' => 'danger',
-                        default => 'gray',
-                    }),
-            ])
-            ->filters([
-                //
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPurchaseOrders::route('/'),
-            'create' => Pages\CreatePurchaseOrder::route('/create'),
-            'edit' => Pages\EditPurchaseOrder::route('/edit/{record}') ,
+            'index' => ListPurchaseOrders::route('/'),
+            'create' => CreatePurchaseOrder::route('/create'),
+            'edit' => EditPurchaseOrder::route('/{record}/edit'),
         ];
     }
 }
