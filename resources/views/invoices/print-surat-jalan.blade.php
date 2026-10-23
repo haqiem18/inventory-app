@@ -2,141 +2,147 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Surat Jalan - DC JB PRINTING</title>
+    <title>Surat Jalan - {{ $firstRecord->reference_number ?? 'SJ' }}</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 12px; color: #000; margin: 0; padding: 20px; }
-        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-        .company-info h2 { margin: 0; font-size: 18px; text-transform: uppercase; }
-        .company-info p { margin: 2px 0; font-size: 11px; color: #555; }
-        .doc-title { text-align: right; }
-        .doc-title h1 { margin: 0; font-size: 20px; letter-spacing: 1px; }
-        .doc-title p { margin: 2px 0; }
+        body { font-family: Arial, sans-serif; font-size: 11px; color: #000; margin: 0; padding: 15px; }
+        .container { max-width: 800px; margin: auto; background: #fff; }
         
-        .info-section { display: table; width: 100%; margin-bottom: 15px; }
-        .info-box { display: table-cell; width: 50%; vertical-align: top; }
-        .info-box table { width: 100%; font-size: 12px; }
-        .info-box td { padding: 2px 0; }
+        /* Header Grid */
+        .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
+        .logo-area { width: 35%; }
+        .logo { max-width: 180px; height: auto; }
+        
+        .header-right { width: 45%; text-align: left; }
+        .surat-jalan-title { font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+        .customer-name { font-size: 18px; font-weight: bold; margin-top: 2px; }
+        .sj-number { font-size: 14px; font-weight: bold; margin-top: 2px; }
+        
+        .company-address { font-size: 10px; line-height: 1.3; margin-top: 5px; }
+        .header-line { border-bottom: 2px solid #000; margin: 12px 0; }
 
-        table.items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        table.items-table th, table.items-table td { border: 1px solid #000; padding: 6px 8px; text-align: left; }
-        table.items-table th { background-color: #f2f2f2; text-align: center; }
-        table.items-table td.center { text-align: center; }
+        /* Main Table */
+        table.sj-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+        table.sj-table th, table.sj-table td { border: 1px solid #000; padding: 5px 8px; }
+        table.sj-table th { background-color: #fff; font-weight: bold; text-align: center; }
+        
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
 
-        .signatures { display: table; width: 100%; margin-top: 40px; text-align: center; }
-        .sig-box { display: table-cell; width: 33.33%; vertical-align: top; }
-        .sig-space { height: 60px; }
+        /* Summary Row */
+        .summary-row td { border: 1px solid #000; font-weight: bold; background-color: #fff; }
 
+        /* Note Section */
+        .note-text { font-size: 11px; margin-top: 10px; font-weight: bold; }
+
+        /* Signatures */
+        .footer-grid { margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 11px; }
+        .signature-area { width: 30%; text-align: center; }
+        .signature-space { height: 50px; }
+        .signature-line { border-bottom: 1px dotted #000; width: 90%; margin: auto; }
+
+        .no-print { margin-top: 20px; padding: 8px 15px; cursor: pointer; display: inline-block; }
+        
         @media print {
-            body { padding: 0; }
             .no-print { display: none; }
+            body { padding: 0; }
         }
     </style>
 </head>
 <body onload="window.print()">
+    <div class="container">
+        
+        <!-- HEADER KOP -->
+        <div class="header-top">
+            <div class="logo-area">
+                <img src="{{ asset('images/logo.png') }}" alt="JB PRINTING" class="logo" onerror="this.style.display='none'">
+                <div class="company-address">
+                    Jl. Cibaligo No 21/8 Cibeureum<br>
+                    Cimahi Selatan - Cimahi
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="surat-jalan-title">SURAT JALAN</div>
+                <div class="customer-name">{{ strtoupper($firstRecord->customer->name ?? $firstRecord->nama_customer ?? 'JB CIATEUL') }}</div>
+                <div class="sj-number">{{ $firstRecord->reference_number ?? $reference ?? 'JBI.26.1059' }}</div>
+            </div>
+        </div>
 
-    <div class="header">
-        <div class="company-info">
-            <h2>DC JB PRINTING</h2>
-            <p>Pusat Layanan Percetakan & Konveksi</p>
+        <div class="header-line"></div>
+
+        <!-- TABEL SURAT JALAN -->
+        <table class="sj-table">
+            <thead>
+                <tr>
+                    <th style="width: 6%;">No.</th>
+                    <th style="width: 44%;" class="text-left">NAMA STYLE</th>
+                    <th style="width: 20%;">WARNA</th>
+                    <th style="width: 10%;">QTY</th>
+                    <th style="width: 20%;">KETERANGAN</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php 
+                    $totalQty = 0;
+                    $maxRows = 8; // Minimal baris kosong agar bentuknya pas seperti di Excel
+                @endphp
+
+                @foreach($records as $index => $item)
+                    @php 
+                        $qty = $item->quantity ?? $item->qty ?? 0;
+                        $totalQty += $qty;
+                    @endphp
+                    <tr>
+                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td class="text-left">{{ $item->product->name ?? $item->nama_barang ?? '-' }}</td>
+                        <td class="text-center">{{ $item->color ?? $item->warna ?? '-' }}</td>
+                        <td class="text-center">{{ $qty }}</td>
+                        <td class="text-center">{{ $item->description ?? $item->keterangan ?? 'JB' }}</td>
+                    </tr>
+                @endforeach
+
+                <!-- Baris Kosong Tambahan -->
+                @for($i = count($records); $i < $maxRows; $i++)
+                    <tr>
+                        <td class="text-center">{{ $i + 1 }}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                @endfor
+            </tbody>
+            <tfoot>
+                <tr class="summary-row">
+                    <td colspan="3" class="text-right" style="padding-right: 15px;"><strong>Total</strong></td>
+                    <td class="text-center"><strong>{{ $totalQty }}</strong></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <!-- NOTE -->
+        <div class="note-text">
+            Note : Claim kekurangan barang tidak boleh lebih 2 hari
         </div>
-        <div class="doc-title">
-            <h1>SURAT JALAN</h1>
-            <p>Tanggal Cetak: {{ date('d-m-Y H:i') }}</p>
+
+        <!-- TANDA TANGAN & TANGGAL -->
+        <div class="footer-grid">
+            <div class="signature-area" style="text-align: left;">
+                Penerima
+                <div class="signature-space"></div>
+                ( &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; )
+            </div>
+
+            <div class="signature-area" style="text-align: right;">
+                Cimahi, {{ date('d F Y') }}<br>
+                Hormat kami
+                <div class="signature-space"></div>
+                ( &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; )
+            </div>
         </div>
+
+        <button class="no-print" onclick="window.print()">Cetak Surat Jalan</button>
     </div>
-
-    @php
-        $first = $records->first();
-
-        // Logika penentuan nama dan alamat tujuan yang dinamis
-        $namaTujuan = '-';
-        $alamatTujuan = '-';
-
-        if ($first) {
-            if ($first->sub_type === 'mutasi' && $first->toBranch) {
-                $namaTujuan = 'Cabang Tujuan: ' . $first->toBranch->name;
-                $alamatTujuan = $first->toBranch->address ?? '-';
-            } elseif ($first->customer) {
-                $namaTujuan = $first->customer->name;
-                $alamatTujuan = $first->customer->address ?? '-';
-            } elseif ($first->supplier) {
-                $namaTujuan = $first->supplier->name;
-                $alamatTujuan = $first->supplier->address ?? '-';
-            } else {
-                $namaTujuan = $first->nama_customer ?? '-';
-            }
-        }
-    @endphp
-
-    <div class="info-section">
-        <div class="info-box">
-            <table>
-                <tr>
-                    <td style="width: 100px;"><strong>Kepada Yth:</strong></td>
-                    <td>{{ $namaTujuan }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Alamat:</strong></td>
-                    <td>{{ $alamatTujuan }}</td>
-                </tr>
-            </table>
-        </div>
-        <div class="info-box">
-            <table>
-                <tr>
-                    <td style="width: 100px;"><strong>No. Nota/Ref:</strong></td>
-                    <td>{{ $first->reference_number ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Tanggal Kirim:</strong></td>
-                    <td>{{ $first->mutation_date ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Cabang Asal:</strong></td>
-                    <td>{{ $first->branch->name ?? '-' }}</td>
-                </tr>
-            </table>
-        </div>
-    </div>
-
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th style="width: 40px;">No</th>
-                <th>Nama Barang</th>
-                <th style="width: 80px; text-align: center;">Qty</th>
-                <th style="width: 150px;">Keterangan</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($records as $index => $item)
-            <tr>
-                <td class="center">{{ $index + 1 }}</td>
-                <td>{{ $item->product->name ?? $item->nama_barang ?? '-' }}</td>
-                <td class="center">{{ $item->quantity ?? 0 }}</td>
-                <td>{{ $item->notes ?? '-' }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    <div class="signatures">
-        <div class="sig-box">
-            <p>Penerima,</p>
-            <div class="sig-space"></div>
-            <p><strong>( ........................ )</strong></p>
-        </div>
-        <div class="sig-box">
-            <p>Hormat Kami,</p>
-            <div class="sig-space"></div>
-            <p><strong>( ........................ )</strong></p>
-        </div>
-        <div class="sig-box">
-            <p>Disetujui Oleh,</p>
-            <div class="sig-space"></div>
-            <p><strong>( ........................ )</strong></p>
-        </div>
-    </div>
-
 </body>
 </html>
