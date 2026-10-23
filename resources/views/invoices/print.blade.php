@@ -71,7 +71,7 @@
                     Cimahi Selatan - Jawa Barat
                 </div>
             </div>
-            <div style="width: 25%;"></div> <!-- Spacer kanan -->
+            <div style="width: 25%;"></div>
         </div>
 
         <div class="header-line"></div>
@@ -107,7 +107,7 @@
                 @php 
                     $grandTotal = 0; 
                     $totalQty = 0;
-                    $maxRows = 8; // Minimal jumlah baris yang ditampilkan seperti di gambar
+                    $maxRows = 8; 
                 @endphp
 
                 @foreach($records as $index => $item)
@@ -141,15 +141,16 @@
             </tbody>
         </table>
 
-        <!-- BARIS SUMMARY / TOTAL -->
+        <!-- BARIS SUMMARY / TOTAL QTY & AMOUNT -->
         <table class="invoice-table">
             <tr class="summary-row">
                 <td style="width: 56%; border-top: 1px solid #000; border-bottom: 1px solid #000;"></td>
                 <td style="width: 12%; border-top: 1px solid #000; border-bottom: 1px solid #000;" class="text-center">
                     <strong>{{ $totalQty }}</strong>
                 </td>
-                <td style="width: 32%; border-top: 1px solid #000; border-bottom: 1px solid #000;" class="text-right">
-                    - .0
+                <td style="width: 16%; border-top: 1px solid #000; border-bottom: 1px solid #000;"></td>
+                <td style="width: 16%; border-top: 1px solid #000; border-bottom: 1px solid #000;" class="text-right">
+                    <strong>{{ number_format($grandTotal, 0, ',', '.') }}</strong>
                 </td>
             </tr>
         </table>
@@ -163,7 +164,7 @@
                 </tr>
                 <tr>
                     <td class="text-center">TOTAL</td>
-                    <td class="text-right">- .0</td>
+                    <td class="text-right">{{ number_format($grandTotal, 0, ',', '.') }}</td>
                 </tr>
             </table>
         </div>
