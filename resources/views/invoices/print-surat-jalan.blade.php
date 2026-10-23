@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Surat Jalan - {{ $firstRecord->reference_number ?? 'SJ' }}</title>
+    <title>Surat Jalan - {{ $firstRecord->reference_number ?? ($reference ?? 'SJ') }}</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 11px; color: #000; margin: 0; padding: 15px; }
         .container { max-width: 800px; margin: auto; background: #fff; }
@@ -38,8 +38,8 @@
         /* Signatures */
         .footer-grid { margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 11px; }
         .signature-area { width: 30%; text-align: center; }
-        .signature-space { height: 50px; }
-        .signature-line { border-bottom: 1px dotted #000; width: 90%; margin: auto; }
+        .signature-space { height: 45px; }
+        .sales-info { margin-top: 10px; font-size: 11px; font-weight: bold; }
 
         .no-print { margin-top: 20px; padding: 8px 15px; cursor: pointer; display: inline-block; }
         
@@ -52,6 +52,28 @@
 <body onload="window.print()">
     <div class="container">
         
+        @php
+            $firstRecord = isset($records) && $records->isNotEmpty() ? $records->first() : null;
+            
+            $namaTujuan = 'JB CIATEUL';
+            $salesName = null;
+
+            if ($firstRecord) {
+                if ($firstRecord->sub_type === 'mutasi' && $firstRecord->toBranch) {
+                    $namaTujuan = $firstRecord->toBranch->name;
+                } elseif ($firstRecord->customer) {
+                    $namaTujuan = $firstRecord->customer->name;
+                } elseif ($firstRecord->supplier) {
+                    $namaTujuan = $firstRecord->supplier->name;
+                } elseif (!empty($firstRecord->nama_customer)) {
+                    $namaTujuan = $firstRecord->nama_customer;
+                }
+
+                // Ambil data sales jika ada relasinya
+                $salesName = $firstRecord->salesPerson->name ?? $firstRecord->sales->name ?? $firstRecord->sales_person ?? null;
+            }
+        @endphp
+
         <!-- HEADER KOP -->
         <div class="header-top">
             <div class="logo-area">
@@ -63,8 +85,8 @@
             </div>
             <div class="header-right">
                 <div class="surat-jalan-title">SURAT JALAN</div>
-                <div class="customer-name">{{ strtoupper($firstRecord->customer->name ?? $firstRecord->nama_customer ?? 'JB CIATEUL') }}</div>
-                <div class="sj-number">{{ $firstRecord->reference_number ?? $reference ?? 'JBI.26.1059' }}</div>
+                <div class="customer-name">{{ strtoupper($namaTujuan) }}</div>
+                <div class="sj-number">{{ $firstRecord->reference_number ?? ($reference ?? 'JBI.26.1059') }}</div>
             </div>
         </div>
 
@@ -84,20 +106,23 @@
             <tbody>
                 @php 
                     $totalQty = 0;
-                    $maxRows = 8; // Minimal baris kosong agar bentuknya pas seperti di Excel
+                    $maxRows = 8; 
                 @endphp
 
                 @foreach($records as $index => $item)
                     @php 
                         $qty = $item->quantity ?? $item->qty ?? 0;
                         $totalQty += $qty;
+
+                        // Mengambil satuan dari relasi produk (unit / satuan)
+                        $satuanBarang = $item->product->unit ?? $item->product->satuan ?? $item->satuan ?? '';
                     @endphp
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td class="text-left">{{ $item->product->name ?? $item->nama_barang ?? '-' }}</td>
                         <td class="text-center">{{ $item->color ?? $item->warna ?? '-' }}</td>
                         <td class="text-center">{{ $qty }}</td>
-                        <td class="text-center">{{ $item->description ?? $item->keterangan ?? 'JB' }}</td>
+                        <td class="text-center">{{ $satuanBarang }}</td>
                     </tr>
                 @endforeach
 
@@ -126,7 +151,7 @@
             Note : Claim kekurangan barang tidak boleh lebih 2 hari
         </div>
 
-        <!-- TANDA TANGAN & TANGGAL -->
+        <!-- TANDA TANGAN & SALES -->
         <div class="footer-grid">
             <div class="signature-area" style="text-align: left;">
                 Penerima
@@ -139,6 +164,9 @@
                 Hormat kami
                 <div class="signature-space"></div>
                 ( &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; )
+                @if($salesName)
+                    <div class="sales-info">Sales: {{ $salesName }}</div>
+                @endif
             </div>
         </div>
 
