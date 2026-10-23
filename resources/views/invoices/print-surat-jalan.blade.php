@@ -39,7 +39,6 @@
         .footer-grid { margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 11px; }
         .signature-area { width: 30%; text-align: center; }
         .signature-space { height: 45px; }
-        .sales-info { margin-top: 10px; font-size: 11px; font-weight: bold; }
 
         .no-print { margin-top: 20px; padding: 8px 15px; cursor: pointer; display: inline-block; }
         
@@ -56,8 +55,6 @@
             $firstRecord = isset($records) && $records->isNotEmpty() ? $records->first() : null;
             
             $namaTujuan = 'JB CIATEUL';
-            $salesName = null;
-
             if ($firstRecord) {
                 if ($firstRecord->sub_type === 'mutasi' && $firstRecord->toBranch) {
                     $namaTujuan = $firstRecord->toBranch->name;
@@ -68,9 +65,6 @@
                 } elseif (!empty($firstRecord->nama_customer)) {
                     $namaTujuan = $firstRecord->nama_customer;
                 }
-
-                // Ambil data sales jika ada relasinya
-                $salesName = $firstRecord->salesPerson->name ?? $firstRecord->sales->name ?? $firstRecord->sales_person ?? null;
             }
         @endphp
 
@@ -114,8 +108,13 @@
                         $qty = $item->quantity ?? $item->qty ?? 0;
                         $totalQty += $qty;
 
-                        // Mengambil satuan dari relasi produk (unit / satuan)
-                        $satuanBarang = $item->product->unit ?? $item->product->satuan ?? $item->satuan ?? '';
+                        // Mengambil string nama satuan dengan aman (mengecek apakah relasi atau string biasa)
+                        $satuanBarang = '-';
+                        if (isset($item->product->unit)) {
+                            $satuanBarang = is_object($item->product->unit) ? ($item->product->unit->name ?? '-') : $item->product->unit;
+                        } elseif (isset($item->product->satuan)) {
+                            $satuanBarang = is_object($item->product->satuan) ? ($item->product->satuan->name ?? '-') : $item->product->satuan;
+                        }
                     @endphp
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
@@ -151,7 +150,7 @@
             Note : Claim kekurangan barang tidak boleh lebih 2 hari
         </div>
 
-        <!-- TANDA TANGAN & SALES -->
+        <!-- TANDA TANGAN -->
         <div class="footer-grid">
             <div class="signature-area" style="text-align: left;">
                 Penerima
@@ -164,9 +163,6 @@
                 Hormat kami
                 <div class="signature-space"></div>
                 ( &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; )
-                @if($salesName)
-                    <div class="sales-info">Sales: {{ $salesName }}</div>
-                @endif
             </div>
         </div>
 
