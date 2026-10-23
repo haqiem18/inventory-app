@@ -5,7 +5,7 @@
     <title>Purchase Order - {{ $purchaseOrder->po_number }}</title>
     <style>
         body { font-family: 'Arial', sans-serif; font-size: 11px; color: #000; margin: 0; padding: 15px; }
-        .container { max-width: 850px; margin: auto; background: #fff; border: 2px solid #000; padding: 10px; }
+        .container { max-width: 900px; margin: auto; background: #fff; border: 2px solid #000; padding: 10px; }
 
         /* Header Grid */
         .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
@@ -36,18 +36,10 @@
 
         /* Footer Calc Grid */
         .footer-grid { display: flex; justify-content: space-between; align-items: flex-start; margin-top: -1px; }
-        
-        .left-footer-area { width: 49%; }
-        
-        .requisitioner-box { border: 1px solid #003366; margin-top: 10px; }
+        .requisitioner-box { width: 49%; border: 1px solid #003366; }
         .requisitioner-title { background-color: #003366; color: #fff; font-weight: bold; padding: 4px 8px; text-align: center; }
-        .requisitioner-space { height: 50px; }
+        .requisitioner-space { height: 75px; }
         .requisitioner-line { border-bottom: 2px solid #000; width: 80%; margin: 0 auto; }
-
-        /* Installment / Termin Table */
-        table.installment-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; }
-        table.installment-table th { background-color: #003366; color: #fff; border: 1px solid #003366; padding: 4px; text-align: center; }
-        table.installment-table td { border: 1px solid #ccc; padding: 4px 6px; }
 
         table.calc-table { width: 50%; border-collapse: collapse; font-size: 11px; }
         table.calc-table td { border: 1px solid #ccc; padding: 4px 8px; }
@@ -138,12 +130,13 @@
         <table class="item-table">
             <thead>
                 <tr>
-                    <th style="width: 8%;">Item#</th>
-                    <th style="width: 44%;">Product Description</th>
-                    <th style="width: 10%;">Roll</th>
-                    <th style="width: 10%;">Quantity</th>
-                    <th style="width: 14%;">Unit Price</th>
+                    <th style="width: 5%;">Item#</th>
+                    <th style="width: 35%;">Product Description</th>
+                    <th style="width: 8%;">Roll</th>
+                    <th style="width: 8%;">Quantity</th>
+                    <th style="width: 13%;">Unit Price</th>
                     <th style="width: 14%;">Amount</th>
+                    <th style="width: 17%;">Ket</th>
                 </tr>
             </thead>
             <tbody>
@@ -158,6 +151,9 @@
                         $price = $item->purchase_price ?? $item->price ?? 0;
                         $itemSubtotal = $item->subtotal ?? ($qty * $price);
                         $subtotal += $itemSubtotal;
+                        
+                        // Mengambil data keterangan dari item
+                        $ketItem = $item->notes ?? $item->description ?? $item->keterangan ?? '';
                     @endphp
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
@@ -166,6 +162,7 @@
                         <td class="text-center">{{ $qty }}</td>
                         <td class="text-right">Rp {{ number_format($price, 0, ',', '.') }}</td>
                         <td class="text-right">Rp {{ number_format($itemSubtotal, 0, ',', '.') }}</td>
+                        <td class="text-left">{{ $ketItem }}</td>
                     </tr>
                 @endforeach
 
@@ -178,55 +175,29 @@
                         <td></td>
                         <td></td>
                         <td class="text-right">-</td>
+                        <td></td>
                     </tr>
                 @endfor
             </tbody>
         </table>
 
-        @php
-            $discount = $purchaseOrder->discount ?? 0;
-            $taxPercent = $purchaseOrder->tax_percent ?? 11; // PPN 11%
-            $taxAmount = ($subtotal - $discount) * ($taxPercent / 100);
-            $otherCost = $purchaseOrder->other_cost ?? 0;
-            $shippingCost = $purchaseOrder->shipping_cost ?? 0;
-            $totalAmount = $purchaseOrder->total_amount ?? ($subtotal - $discount + $taxAmount + $otherCost + $shippingCost);
-        @endphp
-
-        <!-- FOOTER KALKULASI & TERMIN / REQUISITIONER -->
+        <!-- FOOTER KALKULASI & REQUISITIONER -->
         <div class="footer-grid">
-            <div class="left-footer-area">
-                <!-- Tabel Jadwal Termin Cicilan (Jika ada data termin/cicilan di database) -->
-                @if(isset($purchaseOrder->installments) && $purchaseOrder->installments->count() > 0)
-                <table class="installment-table">
-                    <thead>
-                        <tr>
-                            <th colspan="3">JADWAL TERMIN PEMBAYARAN (CICILAN)</th>
-                        </tr>
-                        <tr>
-                            <th>Termin</th>
-                            <th>Jatuh Tempo</th>
-                            <th>Jumlah (Rp)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($purchaseOrder->installments as $idx => $inst)
-                        <tr>
-                            <td class="text-center">Termin {{ $idx + 1 }}</td>
-                            <td class="text-center">{{ \Carbon\Carbon::parse($inst->due_date)->format('d/m/Y') }}</td>
-                            <td class="text-right">Rp {{ number_format($inst->amount, 0, ',', '.') }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                @endif
-
-                <div class="requisitioner-box">
-                    <div class="requisitioner-title">Requisitioner</div>
-                    <div class="requisitioner-space"></div>
-                    <div class="requisitioner-line"></div>
-                    <br>
-                </div>
+            <div class="requisitioner-box">
+                <div class="requisitioner-title">Requisitioner</div>
+                <div class="requisitioner-space"></div>
+                <div class="requisitioner-line"></div>
+                <br>
             </div>
+
+            @php
+                $discount = $purchaseOrder->discount ?? 0;
+                $taxPercent = $purchaseOrder->tax_percent ?? 11; 
+                $taxAmount = ($subtotal - $discount) * ($taxPercent / 100);
+                $otherCost = $purchaseOrder->other_cost ?? 0;
+                $shippingCost = $purchaseOrder->shipping_cost ?? 0;
+                $totalAmount = $purchaseOrder->total_amount ?? ($subtotal - $discount + $taxAmount + $otherCost + $shippingCost);
+            @endphp
 
             <table class="calc-table">
                 <tr>
