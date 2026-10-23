@@ -44,6 +44,7 @@
         .bank-details { font-size: 10px; line-height: 1.4; width: 40%; }
         .signature-box { text-align: center; width: 25%; font-size: 11px; }
         .signature-line { margin-top: 50px; border-bottom: 1px dotted #000; width: 80%; margin-left: auto; margin-right: auto; }
+        .sales-info { margin-top: 8px; font-size: 11px; font-weight: bold; text-align: center; }
 
         /* Notes Box */
         .notes-box { border: 1px solid #000; padding: 5px 8px; font-size: 9px; line-height: 1.3; margin-top: 20px; font-weight: bold; width: 70%; }
@@ -59,6 +60,14 @@
 <body onload="window.print()">
     <div class="container">
         
+        @php
+            $firstRecord = isset($records) && $records->isNotEmpty() ? $records->first() : null;
+            $salesName = null;
+            if ($firstRecord) {
+                $salesName = $firstRecord->salesPerson->name ?? $firstRecord->sales->name ?? $firstRecord->sales_person ?? null;
+            }
+        @endphp
+
         <!-- HEADER KOP -->
         <div class="header-top">
             <div class="logo-area">
@@ -186,6 +195,9 @@
             <div class="signature-box">
                 Hormat Kami.
                 <div class="signature-line"></div>
+                @if($salesName)
+                    <div class="sales-info">Sales: {{ $salesName }}</div>
+                @endif
             </div>
         </div>
 
