@@ -4,174 +4,195 @@
     <meta charset="UTF-8">
     <title>Invoice {{ $reference_number }}</title>
     <style>
-        body { font-family: 'Arial', sans-serif; font-size: 11px; color: #000; margin: 0; padding: 10px; }
-        .container { max-width: 900px; margin: auto; background: #fff; }
+        body { font-family: Arial, sans-serif; font-size: 11px; color: #000; margin: 0; padding: 15px; }
+        .container { max-width: 800px; margin: auto; background: #fff; }
         
         /* Header Grid */
-        .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-        .logo-area { display: flex; align-items: center; gap: 15px; }
-        .logo { max-height: 50px; }
-        .invoice-title { font-size: 26px; font-weight: bold; letter-spacing: 3px; text-align: right; }
+        .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
+        .logo-area { width: 35%; }
+        .logo { max-width: 180px; height: auto; }
+        .header-center { width: 40%; text-align: center; }
+        .invoice-title { font-size: 22px; font-weight: bold; letter-spacing: 2px; margin-bottom: 5px; }
+        .company-address { font-size: 10px; line-height: 1.3; }
         
-        /* Meta Info */
-        .meta-table { width: 100%; margin-bottom: 15px; font-size: 11px; }
-        .meta-table td { padding: 2px 0; border: none; }
-        
-        /* Main Table with Multi-level Header */
-        table.invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
-        table.invoice-table th, table.invoice-table td { border: 1px solid #000; padding: 6px 8px; text-align: center; }
-        table.invoice-table th { background-color: #f2f2f2; font-weight: bold; }
-        .text-left { text-align: left !important; }
-        .text-right { text-align: right !important; }
+        .header-line { border-bottom: 2px solid #000; margin-bottom: 12px; }
 
-        /* Footer / Notes / Bank Details */
-        .footer-section { display: flex; justify-content: space-between; margin-top: 20px; align-items: flex-start; }
-        .bank-details { font-size: 11px; line-height: 1.4; }
+        /* Meta Info (TO & Date / No SJ) */
+        .meta-table { width: 100%; margin-bottom: 15px; font-size: 11px; }
+        .meta-table td { padding: 2px 0; vertical-align: top; }
+
+        /* Main Invoice Table */
+        table.invoice-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        table.invoice-table th, table.invoice-table td { border-left: 1px solid #000; border-right: 1px solid #000; padding: 4px 8px; }
+        table.invoice-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; font-weight: bold; background-color: #fff; }
         
-        .notes-box { border: 1px solid #000; padding: 8px; font-size: 10px; margin-top: 15px; width: 60%; line-height: 1.3; }
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
+
+        /* Summary / Total Section */
+        .summary-row td { border-top: 1px solid #000; border-bottom: 1px solid #000; font-weight: bold; }
         
+        .total-box-table { width: 50%; float: right; border-collapse: collapse; font-size: 11px; margin-top: -1px; }
+        .total-box-table td { border: 1px solid #000; padding: 4px 8px; font-weight: bold; }
+
+        /* Clearfix */
+        .clearfix::after { content: ""; clear: both; display: table; }
+
+        /* Signatures & Bank Details */
+        .footer-grid { margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .bank-details { font-size: 10px; line-height: 1.4; width: 40%; }
+        .signature-box { text-align: center; width: 25%; font-size: 11px; }
+        .signature-line { margin-top: 50px; border-bottom: 1px dotted #000; width: 80%; margin-left: auto; margin-right: auto; }
+
+        /* Notes Box */
+        .notes-box { border: 1px solid #000; padding: 5px 8px; font-size: 9px; line-height: 1.3; margin-top: 20px; font-weight: bold; width: 70%; }
+
         .no-print { margin-top: 20px; padding: 8px 15px; cursor: pointer; display: inline-block; }
         
         @media print {
             .no-print { display: none; }
+            body { padding: 0; }
         }
     </style>
 </head>
 <body onload="window.print()">
     <div class="container">
         
-        <!-- HEADER KOP & JUDUL -->
+        <!-- HEADER KOP -->
         <div class="header-top">
             <div class="logo-area">
-                <!-- Sesuaikan path logo Anda -->
-                <img src="{{ asset('images/logo.png') }}" alt="Logo JB" class="logo" onerror="this.style.display='none'">
-                <div>
-                    <h3 style="margin: 0; font-size: 16px;">DC JB PRINTING</h3>
+                <img src="{{ asset('images/logo.png') }}" alt="JB PRINTING" class="logo" onerror="this.style.display='none'">
+            </div>
+            <div class="header-center">
+                <div class="invoice-title">INVOICE</div>
+                <div class="company-address">
+                    JL. Cibaligo No. 21/8 Cibeureum<br>
+                    Cimahi Selatan - Jawa Barat
                 </div>
             </div>
-            <div>
-                <div class="invoice-title">INVOICE</div>
-            </div>
+            <div style="width: 25%;"></div> <!-- Spacer kanan -->
         </div>
 
-        <!-- INFORMASI TUJUAN & TANGGAL -->
+        <div class="header-line"></div>
+
+        <!-- INFORMASI PELANGGAN & DETAIL NOTA -->
         <table class="meta-table">
             <tr>
-                <td style="width: 8%;"><strong>TO:</strong></td>
-                <td style="width: 52%;"><strong>{{ strtoupper($header->customer->name ?? 'PELANGGAN UMUM') }}</strong></td>
-                <td style="width: 12%;">Date</td>
-                <td style="width: 28%;">: {{ $header->created_at->format('d F Y') }}</td>
+                <td style="width: 5%;">TO:</td>
+                <td style="width: 45%;"><strong>{{ strtoupper($header->customer->name ?? 'JB CIATEUL') }}</strong></td>
+                <td style="width: 10%;">Date :</td>
+                <td style="width: 40%; border-bottom: 1px solid #000;">{{ $header->created_at ? $header->created_at->format('d F Y') : date('d F Y') }}</td>
             </tr>
             <tr>
                 <td></td>
                 <td></td>
-                <td>Inv. No</td>
-                <td>: {{ $reference_number }}</td>
-            </tr>
-            <tr>
-                <td></td>
-                <td></td>
-                <td>No SJ</td>
-                <td>: {{ $header->reference_number ?? '-' }}</td>
+                <td>No SJ :</td>
+                <td style="border-bottom: 1px solid #000;">{{ $header->reference_number ?? $reference_number }}</td>
             </tr>
         </table>
 
-        <!-- TABEL RINCIAN ITEM (GAYA EXCEL) -->
+        <!-- TABEL BARANG -->
         <table class="invoice-table">
             <thead>
                 <tr>
-                    <th rowspan="2" style="width: 5%;">No.</th>
-                    <th rowspan="2" style="width: 27%;">Descriptions</th>
-                    <th colspan="4" style="width: 32%;">MATERIAL</th>
-                    <th colspan="3" style="width: 24%;">QTY</th>
-                    <th rowspan="2" style="width: 12%;">Total Amount</th>
-                </tr>
-                <tr>
-                    <th>TYPE</th>
-                    <th>Kg</th>
-                    <th>Price</th>
-                    <th>Amount</th>
-                    <th>MTR</th>
-                    <th>Price</th>
-                    <th>Amount</th>
+                    <th style="width: 6%;">No.</th>
+                    <th style="width: 50%;" class="text-left">Descriptions</th>
+                    <th style="width: 12%;">Qty</th>
+                    <th style="width: 16%;">Price<br><span style="font-weight: normal;">Rp</span></th>
+                    <th style="width: 16%;">Amount<br><span style="font-weight: normal;">Rp</span></th>
                 </tr>
             </thead>
             <tbody>
-                @php $grandTotal = 0; @endphp
+                @php 
+                    $grandTotal = 0; 
+                    $totalQty = 0;
+                    $maxRows = 8; // Minimal jumlah baris yang ditampilkan seperti di gambar
+                @endphp
+
                 @foreach($records as $index => $item)
                     @php 
                         $qty = $item->quantity ?? 0;
                         $price = $item->price ?? 0;
                         $totalItem = $item->subtotal ?? ($qty * $price);
+                        
+                        $totalQty += $qty;
                         $grandTotal += $totalItem;
                     @endphp
                     <tr>
-                        <td>{{ $index + 1 }}</td>
+                        <td class="text-center">{{ $index + 1 }}</td>
                         <td class="text-left">{{ $item->product->name ?? $item->nama_barang ?? '-' }}</td>
-                        <td>{{ $item->material_type ?? 'SATIN' }}</td>
-                        <td>{{ $item->kg ?? '-' }}</td>
-                        <td>{{ $item->material_price ? number_format($item->material_price, 0, ',', '.') : '-' }}</td>
-                        <td>{{ $item->material_amount ? number_format($item->material_amount, 0, ',', '.') : '-' }}</td>
-                        <td>{{ $qty }}</td>
-                        <td>{{ number_format($price, 0, ',', '.') }}</td>
-                        <td>{{ number_format($totalItem, 0, ',', '.') }}</td>
-                        <td class="text-right">Rp {{ number_format($totalItem, 0, ',', '.') }}</td>
+                        <td class="text-center">{{ $qty }}</td>
+                        <td class="text-right">{{ $price > 0 ? number_format($price, 0, ',', '.') : '-' }}</td>
+                        <td class="text-right">{{ $totalItem > 0 ? number_format($totalItem, 0, ',', '.') : '-' }}</td>
                     </tr>
                 @endforeach
 
-                <!-- Baris Kosong Tambahan agar mirip format form excel jika item sedikit -->
-                @for($i = count($records); $i < 5; $i++)
+                <!-- Baris Kosong Tambahan jika data < 8 -->
+                @for($i = count($records); $i < $maxRows; $i++)
                     <tr>
-                        <td>{{ $i + 1 }}</td>
-                        <td class="text-left"></td>
+                        <td class="text-center">{{ $i + 1 }}</td>
                         <td></td>
                         <td></td>
                         <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td class="text-right"></td>
+                        <td class="text-right">-</td>
                     </tr>
                 @endfor
             </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="6" class="text-right" style="font-weight: bold;">Total</td>
-                    <td><strong>{{ $records->sum('quantity') }}</strong></td>
-                    <td></td>
-                    <td></td>
-                    <td class="text-right"><strong>Rp {{ number_format($grandTotal, 0, ',', '.') }}</strong></td>
-                </tr>
-                <tr>
-                    <td colspan="9" class="text-right" style="font-weight: bold; background: #f9f9f9;">TOTAL</td>
-                    <td class="text-right" style="font-weight: bold; background: #f9f9f9;">Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
-                </tr>
-            </tfoot>
         </table>
 
-        <!-- BANK DETAILS & CATATAN -->
-        <div class="footer-section">
+        <!-- BARIS SUMMARY / TOTAL -->
+        <table class="invoice-table">
+            <tr class="summary-row">
+                <td style="width: 56%; border-top: 1px solid #000; border-bottom: 1px solid #000;"></td>
+                <td style="width: 12%; border-top: 1px solid #000; border-bottom: 1px solid #000;" class="text-center">
+                    <strong>{{ $totalQty }}</strong>
+                </td>
+                <td style="width: 32%; border-top: 1px solid #000; border-bottom: 1px solid #000;" class="text-right">
+                    - .0
+                </td>
+            </tr>
+        </table>
+
+        <!-- TOTAL & DEPOSIT BOX -->
+        <div class="clearfix">
+            <table class="total-box-table">
+                <tr>
+                    <td style="width: 50%;" class="text-center">DEPOSIT</td>
+                    <td style="width: 50%;" class="text-right">-</td>
+                </tr>
+                <tr>
+                    <td class="text-center">TOTAL</td>
+                    <td class="text-right">- .0</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- TANDA TERIMA & HORMAT KAMI -->
+        <div class="footer-grid">
             <div class="bank-details">
                 <strong>Bank Details :</strong><br>
                 BERTON<br>
                 BANK CENTRAL ASIA<br>
-                ACCOUNT NO. 777-266-1668
+                ACCOUNT NO : 838 265 1668
+            </div>
+
+            <div class="signature-box">
+                Tanda Terima
+                <div class="signature-line"></div>
+            </div>
+
+            <div class="signature-box">
+                Hormat Kami.
+                <div class="signature-line"></div>
             </div>
         </div>
 
+        <!-- CATATAN FOOTER -->
         <div class="notes-box">
-            <strong>CATATAN :</strong><br>
             PEMBAYARAN SAH HANYA MELALUI REKENING TERTERA<br>
             PEMBAYARAN DILUAR REKENING TERTERA DIANGGAP BELUM MEMBAYAR TAGIHAN<br>
-            BUKTI TRANSFER DAPAT DIKIRIM MELALUI ADMIN JB PRINTING ATAU WA NO 0878-8822-1668<br>
-            PENGEMBALIAN DANA KARENA KESALAHAN TRANSFER AKAN DIPROSES MINIMAL 3 HARI KERJA
-        </div>
-
-        <div style="text-align: right; margin-top: 30px;">
-            <p>Mengetahui,</p>
-            <br><br><br>
-            <p><strong>Management</strong></p>
+            BUKTI TRANSFER DAPAT DIKIRIM KE WA NO 0877-7888-1668
         </div>
 
         <button class="no-print" onclick="window.print()">Cetak Invoice</button>
