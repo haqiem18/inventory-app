@@ -17,7 +17,7 @@
         
         .header-line { border-bottom: 2px solid #000; margin-bottom: 12px; }
 
-        /* Meta Info (TO & Date / No SJ) */
+        /* Meta Info (TO & Date / No SJ / Sales) */
         .meta-table { width: 100%; margin-bottom: 15px; font-size: 11px; }
         .meta-table td { padding: 2px 0; vertical-align: top; }
 
@@ -44,7 +44,6 @@
         .bank-details { font-size: 10px; line-height: 1.4; width: 40%; }
         .signature-box { text-align: center; width: 25%; font-size: 11px; }
         .signature-line { margin-top: 50px; border-bottom: 1px dotted #000; width: 80%; margin-left: auto; margin-right: auto; }
-        .sales-info { margin-top: 8px; font-size: 11px; font-weight: bold; text-align: center; }
 
         /* Notes Box */
         .notes-box { border: 1px solid #000; padding: 5px 8px; font-size: 9px; line-height: 1.3; margin-top: 20px; font-weight: bold; width: 70%; }
@@ -63,8 +62,18 @@
         @php
             $firstRecord = isset($records) && $records->isNotEmpty() ? $records->first() : null;
             $salesName = null;
+            $customerAddress = '-';
+
             if ($firstRecord) {
                 $salesName = $firstRecord->salesPerson->name ?? $firstRecord->sales->name ?? $firstRecord->sales_person ?? null;
+                
+                if (isset($header->customer->address)) {
+                    $customerAddress = $header->customer->address;
+                } elseif (isset($firstRecord->customer->address)) {
+                    $customerAddress = $firstRecord->customer->address;
+                } elseif (isset($firstRecord->alamat_customer)) {
+                    $customerAddress = $firstRecord->alamat_customer;
+                }
             }
         @endphp
 
@@ -88,17 +97,25 @@
         <!-- INFORMASI PELANGGAN & DETAIL NOTA -->
         <table class="meta-table">
             <tr>
-                <td style="width: 5%;">TO:</td>
-                <td style="width: 45%;"><strong>{{ strtoupper($header->customer->name ?? 'JB CIATEUL') }}</strong></td>
-                <td style="width: 10%;">Date :</td>
-                <td style="width: 40%; border-bottom: 1px solid #000;">{{ $header->created_at ? $header->created_at->format('d F Y') : date('d F Y') }}</td>
+                <td style="width: 8%;"><strong>TO:</strong></td>
+                <td style="width: 42%;"><strong>{{ strtoupper($header->customer->name ?? 'JB CIATEUL') }}</strong></td>
+                <td style="width: 12%;">Date :</td>
+                <td style="width: 38%; border-bottom: 1px solid #000;">{{ $header->created_at ? $header->created_at->format('d F Y') : date('d F Y') }}</td>
             </tr>
             <tr>
-                <td></td>
-                <td></td>
+                <td><strong>Alamat:</strong></td>
+                <td>{{ $customerAddress }}</td>
                 <td>No SJ :</td>
                 <td style="border-bottom: 1px solid #000;">{{ $header->reference_number ?? $reference_number }}</td>
             </tr>
+            @if($salesName)
+            <tr>
+                <td></td>
+                <td></td>
+                <td>Sales :</td>
+                <td><strong>{{ $salesName }}</strong></td>
+            </tr>
+            @endif
         </table>
 
         <!-- TABEL BARANG -->
@@ -195,9 +212,6 @@
             <div class="signature-box">
                 Hormat Kami.
                 <div class="signature-line"></div>
-                @if($salesName)
-                    <div class="sales-info">Sales: {{ $salesName }}</div>
-                @endif
             </div>
         </div>
 
