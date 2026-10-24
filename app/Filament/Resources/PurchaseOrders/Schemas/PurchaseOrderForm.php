@@ -21,7 +21,7 @@ class PurchaseOrderForm
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255),
-                
+
                 Select::make('supplier_id')
                     ->label('Supplier')
                     ->relationship('supplier', 'name')
@@ -33,7 +33,7 @@ class PurchaseOrderForm
                     ->label('Cabang Pemesan')
                     ->relationship('branch', 'name')
                     ->required()
-                    ->default(fn () => \App\Models\Branch::first()?->id),
+                    ->default(fn() => \App\Models\Branch::first()?->id),
 
                 DatePicker::make('order_date')
                     ->label('Tanggal PO')
@@ -72,8 +72,8 @@ class PurchaseOrderForm
                             ->label('Jumlah (Roll)')
                             ->numeric()
                             ->default(1)
-                            ->hidden(fn (callable $get) => !self::isFabric($get('product_id')))
-                            ->required(fn (callable $get) => self::isFabric($get('product_id'))),
+                            ->hidden(fn(callable $get) => !self::isFabric($get('product_id')))
+                            ->required(fn(callable $get) => self::isFabric($get('product_id'))),
 
                         TextInput::make('quantity_kg')
                             ->label('Berat (Kg)')
@@ -81,8 +81,8 @@ class PurchaseOrderForm
                             ->step(0.01)
                             ->default(0)
                             ->reactive()
-                            ->hidden(fn (callable $get) => !self::isFabric($get('product_id')))
-                            ->required(fn (callable $get) => self::isFabric($get('product_id')))
+                            ->hidden(fn(callable $get) => !self::isFabric($get('product_id')))
+                            ->required(fn(callable $get) => self::isFabric($get('product_id')))
                             ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                 if (self::isFabric($get('product_id'))) {
                                     $set('subtotal', $state * ($get('purchase_price') ?? 0));
@@ -95,8 +95,8 @@ class PurchaseOrderForm
                             ->numeric()
                             ->default(1)
                             ->reactive()
-                            ->hidden(fn (callable $get) => self::isFabric($get('product_id')))
-                            ->required(fn (callable $get) => !self::isFabric($get('product_id')))
+                            ->hidden(fn(callable $get) => self::isFabric($get('product_id')))
+                            ->required(fn(callable $get) => !self::isFabric($get('product_id')))
                             ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                 if (!self::isFabric($get('product_id'))) {
                                     $set('subtotal', $state * ($get('purchase_price') ?? 0));
@@ -119,6 +119,10 @@ class PurchaseOrderForm
                             ->disabled()
                             ->dehydrated()
                             ->required(),
+
+                        TextInput::make('notes')
+                            ->label('Keterangan / Ket')
+                            ->placeholder('Catatan item...'),
                     ])
                     ->columns(5)
                     ->columnSpanFull()
@@ -133,9 +137,9 @@ class PurchaseOrderForm
     {
         if (!$productId) return false;
         $product = Product::find($productId);
-        
+
         return $product && (
-            stripos($product->name, 'kain') !== false || 
+            stripos($product->name, 'kain') !== false ||
             stripos($product->name, 'roll') !== false
         );
     }
