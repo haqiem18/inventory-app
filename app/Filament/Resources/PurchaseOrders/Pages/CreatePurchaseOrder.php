@@ -14,12 +14,18 @@ class CreatePurchaseOrder extends CreateRecord
         $subtotal = 0;
         if (isset($data['items']) && is_array($data['items'])) {
             foreach ($data['items'] as $item) {
-                $itemSubtotal = isset($item['subtotal']) ? (float) $item['subtotal'] : 0;
+                // Ambil subtotal per item, atau hitung dari qty * price jika subtotal kosong
+                $qty = $item['quantity'] ?? 0;
+                $price = $item['purchase_price'] ?? $item['price'] ?? 0;
+                $itemSubtotal = isset($item['subtotal']) && $item['subtotal'] > 0 
+                    ? (float) $item['subtotal'] 
+                    : ($qty * $price);
+                
                 $subtotal += $itemSubtotal;
             }
         }
         
-        // Hitung komponen pajak dan biaya tambahan
+        // Hitung komponen pajak dan biaya tambahan secara aman
         $discount = $data['discount'] ?? 0;
         $taxPercent = 11; // PPN 11%
         $taxAmount = ($subtotal - $discount) * ($taxPercent / 100);

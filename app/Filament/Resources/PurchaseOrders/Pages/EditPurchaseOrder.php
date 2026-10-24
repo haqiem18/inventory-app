@@ -22,12 +22,18 @@ class EditPurchaseOrder extends EditRecord
         $subtotal = 0;
         if (isset($data['items']) && is_array($data['items'])) {
             foreach ($data['items'] as $item) {
-                $itemSubtotal = isset($item['subtotal']) ? (float) $item['subtotal'] : 0;
+                // Ambil subtotal per item, atau hitung dari qty * price jika subtotal kosong
+                $qty = $item['quantity'] ?? 0;
+                $price = $item['purchase_price'] ?? $item['price'] ?? 0;
+                $itemSubtotal = isset($item['subtotal']) && $item['subtotal'] > 0 
+                    ? (float) $item['subtotal'] 
+                    : ($qty * $price);
+                
                 $subtotal += $itemSubtotal;
             }
         }
         
-        // Hitung komponen pajak PPN 11% dan biaya lainnya
+        // Hitung komponen pajak PPN 11% dan biaya lainnya secara aman
         $discount = $data['discount'] ?? 0;
         $taxPercent = 11; 
         $taxAmount = ($subtotal - $discount) * ($taxPercent / 100);
