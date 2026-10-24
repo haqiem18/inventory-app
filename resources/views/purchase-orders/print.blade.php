@@ -196,6 +196,8 @@
                 $taxAmount = ($subtotal - $discount) * ($taxPercent / 100);
                 $otherCost = $purchaseOrder->other_cost ?? 0;
                 $shippingCost = $purchaseOrder->shipping_cost ?? 0;
+                
+                // Kalkulasi Total Amount sudah menyertakan taxAmount
                 $totalAmount = $purchaseOrder->total_amount ?? ($subtotal - $discount + $taxAmount + $otherCost + $shippingCost);
             @endphp
 
