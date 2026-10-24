@@ -11,15 +11,23 @@ class CreatePurchaseOrder extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $total = 0;
+        $subtotal = 0;
         if (isset($data['items']) && is_array($data['items'])) {
             foreach ($data['items'] as $item) {
-                $subtotal = isset($item['subtotal']) ? (float) $item['subtotal'] : 0;
-                $total += $subtotal;
+                $itemSubtotal = isset($item['subtotal']) ? (float) $item['subtotal'] : 0;
+                $subtotal += $itemSubtotal;
             }
         }
         
-        $data['total_amount'] = $total;
+        // Hitung komponen pajak dan biaya tambahan
+        $discount = $data['discount'] ?? 0;
+        $taxPercent = 11; // PPN 11%
+        $taxAmount = ($subtotal - $discount) * ($taxPercent / 100);
+        $otherCost = $data['other_cost'] ?? 0;
+        $shippingCost = $data['shipping_cost'] ?? 0;
+
+        // Total amount resmi yang disimpan ke database sudah termasuk PPN
+        $data['total_amount'] = ($subtotal - $discount) + $taxAmount + $otherCost + $shippingCost;
 
         return $data;
     }
