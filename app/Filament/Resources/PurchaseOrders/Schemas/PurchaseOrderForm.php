@@ -7,7 +7,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Fieldset;
 use App\Models\Product;
 
 class PurchaseOrderForm
@@ -129,26 +128,21 @@ class PurchaseOrderForm
                     ->columnSpanFull()
                     ->required(),
 
-                // --- FIELDSET INPUT MANUAL BIAYA & DISKON ---
-                Fieldset::make('Diskon & Biaya Tambahan')
-                    ->schema([
-                        TextInput::make('discount')
-                            ->label('Diskon (Rp)')
-                            ->numeric()
-                            ->default(0),
+                // --- INPUT MANUAL BIAYA & DISKON (Langsung Komponen Standar) ---
+                TextInput::make('discount')
+                    ->label('Diskon (Rp)')
+                    ->numeric()
+                    ->default(0),
 
-                        TextInput::make('other_cost')
-                            ->label('Other Cost / Pembulatan (Rp)')
-                            ->numeric()
-                            ->default(0),
+                TextInput::make('other_cost')
+                    ->label('Other Cost / Pembulatan (Rp)')
+                    ->numeric()
+                    ->default(0),
 
-                        TextInput::make('shipping_cost')
-                            ->label('Shipping & Handling (Rp)')
-                            ->numeric()
-                            ->default(0),
-                    ])
-                    ->columns(3)
-                    ->columnSpanFull(),
+                TextInput::make('shipping_cost')
+                    ->label('Shipping & Handling (Rp)')
+                    ->numeric()
+                    ->default(0),
             ]);
     }
 
