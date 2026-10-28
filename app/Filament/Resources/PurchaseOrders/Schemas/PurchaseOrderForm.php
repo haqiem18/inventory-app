@@ -7,6 +7,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
 use App\Models\Product;
 
 class PurchaseOrderForm
@@ -85,6 +86,7 @@ class PurchaseOrderForm
                             ->required(fn(callable $get) => self::isFabric($get('product_id')))
                             ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                 if (self::isFabric($get('product_id'))) {
+                                    // Perbaikan operator perkalian (*)
                                     $set('subtotal', $state * ($get('purchase_price') ?? 0));
                                 }
                             }),
@@ -99,6 +101,7 @@ class PurchaseOrderForm
                             ->required(fn(callable $get) => !self::isFabric($get('product_id')))
                             ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                 if (!self::isFabric($get('product_id'))) {
+                                    // Perbaikan operator perkalian (*)
                                     $set('subtotal', $state * ($get('purchase_price') ?? 0));
                                 }
                             }),
@@ -110,6 +113,7 @@ class PurchaseOrderForm
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                 $qty = self::isFabric($get('product_id')) ? ($get('quantity_kg') ?? 0) : ($get('quantity') ?? 0);
+                                // Perbaikan operator perkalian (*)
                                 $set('subtotal', $qty * $state);
                             }),
 
@@ -127,6 +131,26 @@ class PurchaseOrderForm
                     ->columns(5)
                     ->columnSpanFull()
                     ->required(),
+
+                // --- SECTION INPUT MANUAL BIAYA & DISKON ---
+                Section::make('Diskon & Biaya Tambahan')
+                    ->schema([
+                        TextInput::make('discount')
+                            ->label('Diskon (Rp)')
+                            ->numeric()
+                            ->default(0),
+
+                        TextInput::make('other_cost')
+                            ->label('Other Cost / Pembulatan (Rp)')
+                            ->numeric()
+                            ->default(0),
+
+                        TextInput::make('shipping_cost')
+                            ->label('Shipping & Handling (Rp)')
+                            ->numeric()
+                            ->default(0),
+                    ])
+                    ->columns(3),
             ]);
     }
 
