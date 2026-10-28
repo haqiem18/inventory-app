@@ -6,7 +6,7 @@ use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
-class EditRecord extends EditRecord // atau class EditPurchaseOrder extends EditRecord
+class EditPurchaseOrder extends EditRecord
 {
     protected static string $resource = PurchaseOrderResource::class;
 
@@ -38,7 +38,6 @@ class EditRecord extends EditRecord // atau class EditPurchaseOrder extends Edit
         $otherCost = (float) ($data['other_cost'] ?? 0);
         $shippingCost = (float) ($data['shipping_cost'] ?? 0);
 
-        // Kalkulasi total bersih dan cegah minus dengan max(0, ...)
         $rawTotal = ($subtotal - $discount) + $taxAmount + $otherCost + $shippingCost;
         $data['total_amount'] = max(0, $rawTotal);
 
