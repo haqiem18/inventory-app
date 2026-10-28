@@ -20,16 +20,26 @@ class EditPurchaseOrder extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $subtotal = 0;
+        
+        // 1. Coba hitung dari data form items yang dikirim
         if (isset($data['items']) && is_array($data['items'])) {
             foreach ($data['items'] as $item) {
-                $qty = $item['quantity'] ?? ($item['quantity_kg'] ?? 0);
-                $price = $item['purchase_price'] ?? $item['price'] ?? 0;
+                $qty = $item['quantity'] ?? ($item['quantity_kg'] ?? ($item['quantity_roll'] ?? 0));
+                $price = $item['purchase_price'] ?? ($item['price'] ?? 0);
                 $itemSubtotal = isset($item['subtotal']) && $item['subtotal'] > 0 
                     ? (float) $item['subtotal'] 
-                    : ($qty * $price);
+                    : ((float) $qty * (float) $price);
                 
                 $subtotal += $itemSubtotal;
             }
+        }
+        
+        // 2. Fallback: Jika subtotal masih 0, ambil langsung dari relasi database record yang sedang diedit
+        if ($subtotal == 0 && $this->record) {
+            $subtotal = $this->record->items->sum(function ($item) {
+                $qty = $item->quantity ?? ($item->quantity_kg ?? ($item->quantity_roll ?? 0));
+                return (float) $qty * (float) ($item->purchase_price ?? 0);
+            });
         }
         
         $discount = (float) ($data['discount'] ?? 0);
