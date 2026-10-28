@@ -197,8 +197,15 @@
                 $otherCost = $purchaseOrder->other_cost ?? 0;
                 $shippingCost = $purchaseOrder->shipping_cost ?? 0;
                 
-                // MURNI DIHITUNG ULANG OTOMATIS (Tanpa mengambil dari database)
-                $totalAmount = ($subtotal - $discount) + $taxAmount + $otherCost + $shippingCost;
+                // Hitung total kotor
+                $rawTotal = ($subtotal - $discount) + $taxAmount + $otherCost + $shippingCost;
+                
+                // PEMBULATAN: 
+                // Pilihan A: Dibulatkan ke kelipatan 1.000 terdekat (misal: 42.199.980 jadi 42.200.000)
+                $totalAmount = round($rawTotal, -3); 
+                
+                // Atau Pilihan B: Jika hanya ingin membuang desimal/pembulatan standar, cukup gunakan:
+                // $totalAmount = round($rawTotal);
             @endphp
 
             <table class="calc-table">
