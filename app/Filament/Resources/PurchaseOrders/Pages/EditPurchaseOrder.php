@@ -6,7 +6,7 @@ use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
-class EditPurchaseOrder extends EditRecord
+class EditRecord extends EditRecord // atau class EditPurchaseOrder extends EditRecord
 {
     protected static string $resource = PurchaseOrderResource::class;
 
@@ -22,26 +22,25 @@ class EditPurchaseOrder extends EditRecord
         $subtotal = 0;
         if (isset($data['items']) && is_array($data['items'])) {
             foreach ($data['items'] as $item) {
-                // Ambil subtotal per item, atau hitung dari qty * price jika subtotal kosong
                 $qty = $item['quantity'] ?? ($item['quantity_kg'] ?? 0);
                 $price = $item['purchase_price'] ?? $item['price'] ?? 0;
                 $itemSubtotal = isset($item['subtotal']) && $item['subtotal'] > 0 
                     ? (float) $item['subtotal'] 
-                    : ($qty * $price); // Perbaikan operator perkalian (*)
+                    : ($qty * $price);
                 
                 $subtotal += $itemSubtotal;
             }
         }
         
-        // Hitung komponen pajak PPN 11% dan biaya lainnya secara aman
         $discount = (float) ($data['discount'] ?? 0);
         $taxPercent = 11; 
-        $taxAmount = ($subtotal - $discount) * ($taxPercent / 100); // Perbaikan operator minus (-)
+        $taxAmount = ($subtotal - $discount) * ($taxPercent / 100);
         $otherCost = (float) ($data['other_cost'] ?? 0);
         $shippingCost = (float) ($data['shipping_cost'] ?? 0);
 
-        // Total amount resmi yang disimpan ke database sudah termasuk PPN
-        $data['total_amount'] = ($subtotal - $discount) + $taxAmount + $otherCost + $shippingCost; // Perbaikan operator minus (-)
+        // Kalkulasi total bersih dan cegah minus dengan max(0, ...)
+        $rawTotal = ($subtotal - $discount) + $taxAmount + $otherCost + $shippingCost;
+        $data['total_amount'] = max(0, $rawTotal);
 
         return $data;
     }
