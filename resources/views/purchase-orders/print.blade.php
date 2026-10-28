@@ -197,8 +197,8 @@
                 $otherCost = $purchaseOrder->other_cost ?? 0;
                 $shippingCost = $purchaseOrder->shipping_cost ?? 0;
                 
-                // Kalkulasi Total Amount sudah menyertakan taxAmount
-                $totalAmount = $purchaseOrder->total_amount ?? ($subtotal - $discount + $taxAmount + $otherCost + $shippingCost);
+                // MURNI DIHITUNG ULANG OTOMATIS (Tanpa mengambil dari database)
+                $totalAmount = ($subtotal - $discount) + $taxAmount + $otherCost + $shippingCost;
             @endphp
 
             <table class="calc-table">
