@@ -9,6 +9,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use App\Models\Product;
+use Filament\Actions\SelectAction;
 
 class PurchaseOrderForm
 {
@@ -133,7 +134,7 @@ class PurchaseOrderForm
                     ->required(),
 
                 // --- SECTION INPUT MANUAL BIAYA & DISKON ---
-                Section::make('Diskon & Biaya Tambahan')
+                SelectAction::make('Diskon & Biaya Tambahan')
                     ->schema([
                         TextInput::make('discount')
                             ->label('Diskon (Rp)')
