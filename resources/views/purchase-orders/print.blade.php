@@ -147,17 +147,20 @@
 
                 @foreach($purchaseOrder->items as $index => $item)
                     @php 
-                        $qty = $item->quantity ?? 0;
-                        $price = $item->purchase_price ?? $item->price ?? 0;
-                        $itemSubtotal = $item->subtotal ?? ($qty * $price);
+                        $qty = $item->quantity ?? ($item->quantity_kg ?? ($item->quantity_roll ?? 0));
+                        $price = $item->purchase_price ?? ($item->price ?? 0);
+                        $itemSubtotal = isset($item->subtotal) && $item->subtotal > 0 
+                            ? (float) $item->subtotal 
+                            : ((float) $qty * (float) $price);
+                        
                         $subtotal += $itemSubtotal;
                         
                         // Mengambil data keterangan dari item
-                        $ketItem = $item->notes ?? $item->description ?? $item->keterangan ?? '';
+                        $ketItem = $item->notes ?? ($item->description ?? ($item->keterangan ?? ''));
                     @endphp
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
-                        <td class="text-left">{{ $item->product->name ?? $item->nama_barang ?? '-' }}</td>
+                        <td class="text-left">{{ $item->product->name ?? ($item->nama_barang ?? '-') }}</td>
                         <td class="text-center">{{ $item->roll ?? $qty }}</td>
                         <td class="text-center">{{ $qty }}</td>
                         <td class="text-right">Rp {{ number_format($price, 0, ',', '.') }}</td>
@@ -191,21 +194,15 @@
             </div>
 
             @php
-                $discount = $purchaseOrder->discount ?? 0;
-                $taxPercent = $purchaseOrder->tax_percent ?? 11; 
+                $discount = (float) ($purchaseOrder->discount ?? 0);
+                $taxPercent = 11; 
                 $taxAmount = ($subtotal - $discount) * ($taxPercent / 100);
-                $otherCost = $purchaseOrder->other_cost ?? 0;
-                $shippingCost = $purchaseOrder->shipping_cost ?? 0;
+                $otherCost = (float) ($purchaseOrder->other_cost ?? 0);
+                $shippingCost = (float) ($purchaseOrder->shipping_cost ?? 0);
                 
-                // Hitung total kotor
+                // Hitung total kotor dan proteksi dengan max(0, ...) agar tidak minus
                 $rawTotal = ($subtotal - $discount) + $taxAmount + $otherCost + $shippingCost;
-                
-                // PEMBULATAN: 
-                // Pilihan A: Dibulatkan ke kelipatan 1.000 terdekat (misal: 42.199.980 jadi 42.200.000)
-                $totalAmount = round($rawTotal, -3); 
-                
-                // Atau Pilihan B: Jika hanya ingin membuang desimal/pembulatan standar, cukup gunakan:
-                // $totalAmount = round($rawTotal);
+                $totalAmount = max(0, $rawTotal);
             @endphp
 
             <table class="calc-table">
@@ -214,16 +211,16 @@
                     <td class="text-right"><strong>Rp {{ number_format($subtotal, 0, ',', '.') }}</strong></td>
                 </tr>
                 <tr>
-                    <td class="title">Discount (%)</td>
-                    <td class="text-right">{{ $discount > 0 ? number_format($discount, 0, ',', '.') : '' }}</td>
+                    <td class="title">Discount (Rp)</td>
+                    <td class="text-right">{{ $discount > 0 ? 'Rp '.number_format($discount, 0, ',', '.') : '' }}</td>
                 </tr>
                 <tr>
                     <td class="title">Sales Tax (%) &nbsp;&nbsp;&nbsp;&nbsp; {{ $taxPercent }}</td>
                     <td class="text-right">Rp {{ number_format($taxAmount, 0, ',', '.') }}</td>
                 </tr>
                 <tr>
-                    <td class="title">Other Cost (Rp) (Pembulatan)</td>
-                    <td class="text-right">{{ $otherCost > 0 ? 'Rp '.number_format($otherCost, 0, ',', '.') : '' }}</td>
+                    <td class="title">Other Cost / Pembulatan (Rp)</td>
+                    <td class="text-right">{{ $otherCost != 0 ? 'Rp '.number_format($otherCost, 0, ',', '.') : '' }}</td>
                 </tr>
                 <tr>
                     <td class="title">Shipping & Handling (Rp)</td>

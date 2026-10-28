@@ -13,5 +13,7 @@ class Supplier extends Model
         'name',
         'phone',
         'address',
+        'npwp',
+        'bank_account',
     ];
 }

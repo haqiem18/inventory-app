@@ -25,6 +25,15 @@ class SupplierForm
                 Textarea::make('address')
                     ->label('Alamat')
                     ->maxLength(65535),
+                
+                TextInput::make('npwp')
+                    ->label('No NPWP')
+                    ->required()
+                    ->maxLength(255),
+
+                Textarea::make('bank_account')
+                    ->label('No. Rekening / Bank')
+                    ->maxLength(255),
 
             ]);
     }
