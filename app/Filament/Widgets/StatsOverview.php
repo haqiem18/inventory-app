@@ -34,14 +34,14 @@ class StatsOverview extends BaseWidget
             foreach ($mutationsHutang as $mutation) {
                 $tagihan = ($mutation->purchase_price ?? 0) * ($mutation->quantity ?? 0);
                 $terbayar = $mutation->debtPayments()->sum('amount_paid');
+                
+                // Perbaikan operator minus
                 $sisa = $tagihan - $terbayar;
                 if ($sisa > 0) {
                     $totalHutang += $sisa;
                 }
             }
-            if ($totalHutang <= 0) {
-                $totalHutang = 17305000;
-            }
+            // Fallback 17305000 DIBAHAS/DIHAPUS agar bisa bernilai 0 saat data kosong
 
             $stats[] = Stat::make('Total Hutang Berjalan', 'Rp ' . number_format($totalHutang, 0, ',', '.'))
                 ->description('Sisa pembayaran ke supplier')
@@ -66,6 +66,8 @@ class StatsOverview extends BaseWidget
         foreach ($mutationsPiutang as $mutation) {
             $tagihanPiutang = ($mutation->price ?? 0) * ($mutation->quantity ?? 0);
             $terbayarPiutang = $mutation->debtPayments()->sum('amount_paid');
+            
+            // Perbaikan operator minus
             $sisaPiutang = $tagihanPiutang - $terbayarPiutang;
             if ($sisaPiutang > 0) {
                 $totalPiutang += $sisaPiutang;
@@ -80,10 +82,8 @@ class StatsOverview extends BaseWidget
 
         // 3. HITUNG TOTAL ASET PERSEDIAAN (Hanya untuk Super Admin / Pusat)
         if (!$isAdminCabang) {
-            $totalAset = StockBatch::sum(DB::raw('quantity_remaining * purchase_price'));
-            if ($totalAset <= 0) {
-                $totalAset = 26810000;
-            }
+            $totalAset = StockBatch::sum(DB::raw('quantity_remaining * purchase_price')) ?? 0;
+            // Fallback 26810000 DIHAPUS agar bisa bernilai 0 saat tabel stock_batches kosong
 
             $stats[] = Stat::make('Total Aset Persediaan', 'Rp ' . number_format($totalAset, 0, ',', '.'))
                 ->description('Nilai modal stok aktif (FIFO Batch)')
