@@ -9,6 +9,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Schemas\Schema;
 use App\Models\Product;
 use App\Models\SalesPerson; // Sesuaikan dengan model sales/supplier Anda
+use App\Models\Supplier;
 
 class ReturnModelForm
 {
@@ -41,7 +42,7 @@ class ReturnModelForm
                         // Menyesuaikan pilihan berdasarkan jenis retur
                         if ($type === 'to_supplier') {
                             // Mengambil data sales/supplier sesuai aturan kolom nama sales
-                            return SalesPerson::pluck('name', 'id');
+                            return Supplier::pluck('name', 'id');
                         } elseif ($type === 'branch_to_hq') {
                             return \App\Models\Branch::pluck('name', 'id');
                         } else {
