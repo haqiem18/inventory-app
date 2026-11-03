@@ -7,6 +7,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Repeater;
 use Filament\Schemas\Schema;
+use App\Models\Product;
+use App\Models\SalesPerson; // Sesuaikan dengan model sales/supplier Anda
 
 class ReturnModelForm
 {
@@ -22,18 +24,33 @@ class ReturnModelForm
                         'customer_to_hq' => 'Retur Konsumen ke Pusat',
                     ])
                     ->required()
-                    ->native(false),
+                    ->native(false)
+                    ->reactive(),
 
                 TextInput::make('reference_number')
-                    ->label('Nomor Referensi / Nota')
+                    ->label('No. Referensi / Nota')
                     ->required()
                     ->default('RET-' . date('YmdHis'))
                     ->maxLength(100),
 
-                TextInput::make('partner_id')
-                    ->label('ID Pihak Terkait (Supplier/Customer/Cabang)')
-                    ->numeric()
-                    ->nullable(),
+                Select::make('partner_id')
+                    ->label('Pihak Terkait (Supplier / Cabang / Customer)')
+                    ->options(function (callable $get) {
+                        $type = $get('return_type');
+                        
+                        // Menyesuaikan pilihan berdasarkan jenis retur
+                        if ($type === 'to_supplier') {
+                            // Mengambil data sales/supplier sesuai aturan kolom nama sales
+                            return SalesPerson::pluck('name', 'id');
+                        } elseif ($type === 'branch_to_hq') {
+                            return \App\Models\Branch::pluck('name', 'id');
+                        } else {
+                            return \App\Models\Customer::pluck('name', 'id');
+                        }
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->required(),
 
                 Select::make('status')
                     ->label('Status')
@@ -54,13 +71,16 @@ class ReturnModelForm
                     ->relationship('items')
                     ->label('Daftar Barang Retur')
                     ->schema([
-                        TextInput::make('item_id')
-                            ->label('ID Barang / Produk')
-                            ->numeric()
-                            ->required(),
+                        Select::make('item_id')
+                            ->label('Barang')
+                            ->options(Product::pluck('name', 'id'))
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->columnSpan(2),
                         
                         TextInput::make('quantity')
-                            ->label('Jumlah')
+                            ->label('Jumlah (Qty)')
                             ->numeric()
                             ->required()
                             ->default(1),
@@ -71,7 +91,7 @@ class ReturnModelForm
                             ->required()
                             ->prefix('Rp'),
                     ])
-                    ->columns(3)
+                    ->columns(4)
                     ->columnSpanFull()
                     ->required(),
             ]);
