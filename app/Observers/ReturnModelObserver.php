@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\ReturnModel;
 use App\Models\StockMutation;
+use Illuminate\Support\Carbon;
 
 class ReturnModelObserver
 {
@@ -45,7 +46,7 @@ class ReturnModelObserver
             $quantity = $item->quantity;
             $purchasePrice = $item->price ?? 0;
 
-            // Buat record StockMutation dengan menyertakan reference_number dan subtotal
+            // Buat record StockMutation dengan menyertakan mutation_date
             StockMutation::create([
                 'reference_number' => 'MUT-' . $return->reference_number . '-' . $productId,
                 'product_id'       => $productId,
@@ -54,6 +55,7 @@ class ReturnModelObserver
                 'quantity'         => $quantity,
                 'purchase_price'   => $purchasePrice,
                 'subtotal'         => $quantity * $purchasePrice,
+                'mutation_date'    => Carbon::now()->toDateString(), // Mengisi tanggal mutasi hari ini
                 'status'           => 'RECEIVED',
                 'notes'            => 'Retur: ' . $return->reference_number,
             ]);
