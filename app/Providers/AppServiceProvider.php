@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Models\StockMutation; // Tambahkan ini
-use App\Observers\StockMutationObserver; // Tambahkan ini
+use App\Models\StockMutation;
+use App\Observers\StockMutationObserver;
+use App\Models\ReturnModel; // Tambahkan ini
+use App\Observers\ReturnModelObserver; // Tambahkan ini
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,7 +23,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Daftarkan observer di sini agar stok otomatis berkurang/bertambah
+        // Daftarkan observer mutasi stok
         StockMutation::observe(StockMutationObserver::class);
+
+        // Daftarkan observer retur barang agar stok otomatis menyesuaikan saat Approved/Edit/Delete
+        ReturnModel::observe(ReturnModelObserver::class);
     }
 }
