@@ -5,10 +5,15 @@ namespace App\Filament\Resources\ReturnModels\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\BulkActionGroup;
 use App\Models\ReturnModel;
+use Filament\Actions\Action as ActionsAction;
+use Filament\Actions\BulkActionGroup as ActionsBulkActionGroup;
+use Filament\Actions\DeleteBulkAction as ActionsDeleteBulkAction;
+use Filament\Actions\EditAction as ActionsEditAction;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 
@@ -68,9 +73,9 @@ class ReturnModelsTable
                     ]),
             ])
             ->actions([
-                \Filament\Tables\Actions\EditAction::make(),
+                ActionsEditAction::make(),
                 
-                Action::make('approve')
+                ActionsAction::make('approve')
                     ->label('Approve')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
@@ -100,8 +105,8 @@ class ReturnModelsTable
                     }),
             ])
             ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                ActionsBulkActionGroup::make([
+                    ActionsDeleteBulkAction::make(),
                 ]),
             ]);
     }
