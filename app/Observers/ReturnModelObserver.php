@@ -3,60 +3,56 @@
 namespace App\Observers;
 
 use App\Models\ReturnModel;
-use App\Models\ProductStock;
+use App\Models\StockMutation;
 
 class ReturnModelObserver
 {
     public function updated(ReturnModel $return): void
     {
-        // Jika statusnya disetujui (Approved) atau item/jumlahnya diubah saat status Approved
-        if ($return->status === 'Approved') {
-            $branchId = $return->branch_id ?? 1;
-
-            foreach ($return->items as $item) {
-                $productId = $item->product_id ?? $item->item_id;
-                
-                $productStock = ProductStock::firstOrCreate(
-                    ['product_id' => $productId, 'branch_id' => $branchId],
-                    ['stock' => 0]
-                );
-
-                // Hitung perubahan berdasarkan jenis retur
-                // Anda bisa mencatat nilai lama (original) vs nilai baru jika quantity diubah
-                $originalQuantity = $item->getOriginal('quantity') ?? $item->quantity;
-                $qtyDifference = $item->quantity - $originalQuantity;
-
-                if ($qtyDifference !== 0) {
-                    if ($return->return_type === 'to_supplier') {
-                        // Jika retur ke supplier bertambah quantity-nya, stok harus semakin berkurang
-                        $productStock->decrement('stock', $qtyDifference);
-                    } elseif ($return->return_type === 'customer_to_hq' || $return->return_type === 'branch_to_hq') {
-                        // Jika retur ke pusat bertambah quantity-nya, stok harus semakin bertambah
-                        $productStock->increment('stock', $qtyDifference);
-                    }
-                }
-            }
+        // 1. Jika status berubah menjadi 'Approved'
+        if ($return->wasChanged('status') && $return->status === 'Approved') {
+            $this->applyMutations($return);
+        } 
+        // 2. Jika data retur yang sudah Approved diubah (misalnya quantity atau itemnya)
+        elseif ($return->status === 'Approved' && $return->wasChanged()) {
+            // Hapus mutasi lama berdasarkan nomor referensi, lalu buat ulang
+            StockMutation::where('notes', 'like', 'Retur: ' . $return->reference_number)->delete();
+            $this->applyMutations($return);
         }
     }
 
     public function deleted(ReturnModel $return): void
     {
-        // Jika data retur yang sudah Approved dihapus, kembalikan stok seperti semula (revert)
+        // Jika data retur yang sudah Approved dihapus, hapus catatan mutasinya
+        // (Observer StockMutation akan otomatis merevert stok kembali secara aman)
         if ($return->status === 'Approved') {
-            $branchId = $return->branch_id ?? 1;
-
-            foreach ($return->items as $item) {
-                $productId = $item->product_id ?? $item->item_id;
-                $productStock = ProductStock::where(['product_id' => $productId, 'branch_id' => $branchId])->first();
-
-                if ($productStock) {
-                    if ($return->return_type === 'to_supplier') {
-                        $productStock->increment('stock', $item->quantity);
-                    } elseif ($return->return_type === 'customer_to_hq' || $return->return_type === 'branch_to_hq') {
-                        $productStock->decrement('stock', $item->quantity);
-                    }
-                }
+            $mutations = StockMutation::where('notes', 'like', 'Retur: ' . $return->reference_number)->get();
+            foreach ($mutations as $mutation) {
+                $mutation->delete();
             }
+        }
+    }
+
+    private function applyMutations(ReturnModel $return)
+    {
+        $branchId = $return->branch_id ?? auth()->user()->branch_id ?? 1;
+
+        foreach ($return->items as $item) {
+            $productId = $item->product_id ?? $item->item_id;
+            
+            // Tentukan tipe mutasi berdasarkan jenis retur
+            $mutationType = ($return->return_type === 'to_supplier') ? 'OUT' : 'Masuk';
+
+            // Buat record StockMutation (Otomatis memicu StockMutationObserver untuk update stok & FIFO)
+            StockMutation::create([
+                'product_id'     => $productId,
+                'branch_id'      => $branchId,
+                'type'           => $mutationType,
+                'quantity'       => $item->quantity,
+                'purchase_price' => $item->price ?? 0,
+                'status'         => 'RECEIVED',
+                'notes'          => 'Retur: ' . $return->reference_number,
+            ]);
         }
     }
 }
