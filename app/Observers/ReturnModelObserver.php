@@ -42,16 +42,20 @@ class ReturnModelObserver
             
             // Tentukan tipe mutasi berdasarkan jenis retur
             $mutationType = ($return->return_type === 'to_supplier') ? 'OUT' : 'Masuk';
+            $quantity = $item->quantity;
+            $purchasePrice = $item->price ?? 0;
 
-            // Buat record StockMutation (Otomatis memicu StockMutationObserver untuk update stok & FIFO)
+            // Buat record StockMutation dengan menyertakan reference_number dan subtotal
             StockMutation::create([
-                'product_id'     => $productId,
-                'branch_id'      => $branchId,
-                'type'           => $mutationType,
-                'quantity'       => $item->quantity,
-                'purchase_price' => $item->price ?? 0,
-                'status'         => 'RECEIVED',
-                'notes'          => 'Retur: ' . $return->reference_number,
+                'reference_number' => 'MUT-' . $return->reference_number . '-' . $productId,
+                'product_id'       => $productId,
+                'branch_id'        => $branchId,
+                'type'             => $mutationType,
+                'quantity'         => $quantity,
+                'purchase_price'   => $purchasePrice,
+                'subtotal'         => $quantity * $purchasePrice,
+                'status'           => 'RECEIVED',
+                'notes'            => 'Retur: ' . $return->reference_number,
             ]);
         }
     }
