@@ -6,13 +6,11 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use App\Models\ReturnModel;
-use App\Models\ProductStock;
 use Filament\Actions\Action as ActionsAction;
 use Filament\Actions\BulkActionGroup as ActionsBulkActionGroup;
 use Filament\Actions\DeleteBulkAction as ActionsDeleteBulkAction;
 use Filament\Actions\EditAction as ActionsEditAction;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\DB;
 
 class ReturnModelsTable
 {
@@ -79,40 +77,12 @@ class ReturnModelsTable
                     ->requiresConfirmation()
                     ->visible(fn (ReturnModel $record) => $record->status === 'Pending')
                     ->action(function (ReturnModel $record) {
-                        DB::transaction(function () use ($record) {
-                            $record->update(['status' => 'Approved']);
-
-                            $branchId = $record->branch_id ?? auth()->user()->branch_id;
-
-                            foreach ($record->items as $item) {
-                                $productId = $item->product_id ?? $item->item_id;
-
-                                // Pastikan data stok di product_stocks ada, jika belum otomatis dibuat dengan stock 0
-                                ProductStock::firstOrCreate(
-                                    [
-                                        'product_id' => $productId,
-                                        'branch_id'  => $branchId,
-                                    ],
-                                    ['stock' => 0]
-                                );
-
-                                // Update stok menggunakan kolom 'stock'
-                                if ($record->return_type === 'to_supplier') {
-                                    DB::table('product_stocks')
-                                        ->where('product_id', $productId)
-                                        ->where('branch_id', $branchId)
-                                        ->decrement('stock', $item->quantity);
-                                } elseif ($record->return_type === 'customer_to_hq' || $record->return_type === 'branch_to_hq') {
-                                    DB::table('product_stocks')
-                                        ->where('product_id', $productId)
-                                        ->where('branch_id', $branchId)
-                                        ->increment('stock', $item->quantity);
-                                }
-                            }
-                        });
+                        // Ubah status menjadi Approved. 
+                        // Perubahan stok & pencatatan riwayat mutasi ditangani otomatis oleh ReturnModelObserver.
+                        $record->update(['status' => 'Approved']);
 
                         Notification::make()
-                            ->title('Retur Berhasil Disetujui & Stok Cabang Diperbarui')
+                            ->title('Retur Berhasil Disetujui, Stok & Riwayat Mutasi Diperbarui')
                             ->success()
                             ->send();
                     }),
