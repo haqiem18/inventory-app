@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\ReturnModelController; // <-- Tambahkan ini di atas
 use App\Models\ReturnModel;
 use Illuminate\Http\Request;
 
@@ -18,14 +19,10 @@ Route::get('/admin/purchase-orders/surat-jalan/{record}', [PurchaseOrderControll
     ->name('purchase-orders.surat-jalan')
     ->middleware(['auth']);
 
-// Route Cetak Surat Jalan Retur (Dipindahkan ke luar agar terbaca secara global)
-Route::get('/admin/return-models/{record}/print', function (ReturnModel $record) {
-    $record->load('items.product', 'branch');
-
-    return view('filament.resources.return-models.print-surat-jalan', [
-        'record' => $record
-    ]);
-})->name('return-models.print')->middleware(['web', 'auth']);
+// Route Cetak Surat Jalan Retur (Menggunakan ReturnModelController)
+Route::get('/admin/return-models/{record}/print', [ReturnModelController::class, 'print'])
+    ->name('return-models.print')
+    ->middleware(['web', 'auth']);
 
 // Gunakan satu rute ini saja yang mengarah ke Controller
 Route::get('/print-table', [InvoiceController::class, 'printTable'])
