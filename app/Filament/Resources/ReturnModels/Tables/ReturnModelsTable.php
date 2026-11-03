@@ -5,10 +5,6 @@ namespace App\Filament\Resources\ReturnModels\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\BulkActionGroup;
 use App\Models\ReturnModel;
 use Filament\Actions\Action as ActionsAction;
 use Filament\Actions\BulkActionGroup as ActionsBulkActionGroup;
@@ -85,21 +81,32 @@ class ReturnModelsTable
                         DB::transaction(function () use ($record) {
                             $record->update(['status' => 'Approved']);
 
+                            $branchId = $record->branch_id ?? auth()->user()->branch_id;
+
                             foreach ($record->items as $item) {
-                                $productStock = DB::table('products')->where('id', $item->item_id)->first();
-                                
+                                $productStock = DB::table('product_stocks')
+                                    ->where('product_id', $item->item_id)
+                                    ->where('branch_id', $branchId)
+                                    ->first();
+
                                 if ($productStock) {
                                     if ($record->return_type === 'to_supplier') {
-                                        DB::table('products')->where('id', $item->item_id)->decrement('quantity', $item->quantity);
+                                        DB::table('product_stocks')
+                                            ->where('product_id', $item->item_id)
+                                            ->where('branch_id', $branchId)
+                                            ->decrement('quantity', $item->quantity);
                                     } elseif ($record->return_type === 'customer_to_hq' || $record->return_type === 'branch_to_hq') {
-                                        DB::table('products')->where('id', $item->item_id)->increment('quantity', $item->quantity);
+                                        DB::table('product_stocks')
+                                            ->where('product_id', $item->item_id)
+                                            ->where('branch_id', $branchId)
+                                            ->increment('quantity', $item->quantity);
                                     }
                                 }
                             }
                         });
 
                         Notification::make()
-                            ->title('Retur Berhasil Disetujui & Stok Diperbarui')
+                            ->title('Retur Berhasil Disetujui & Stok Cabang Diperbarui')
                             ->success()
                             ->send();
                     }),
