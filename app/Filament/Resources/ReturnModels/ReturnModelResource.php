@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class ReturnModelResource extends Resource
@@ -25,6 +26,20 @@ class ReturnModelResource extends Resource
     protected static ?string $navigationLabel = 'Retur Barang';
     protected static ?string $modelLabel = 'Retur Barang';
     protected static ?string $pluralModelLabel = 'Retur Barang';
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        // Jika user login adalah admin_cabang, batasi hanya menampilkan retur miliknya/cabangnya
+        if (Auth::check() && Auth::user()->role === 'admin_cabang') {
+            $branchId = Auth::user()->branch_id;
+            // Sesuaikan kolom relasi cabang di tabel returns jika ada, misal 'branch_id' atau 'partner_id'
+            $query->where('branch_id', $branchId);
+        }
+
+        return $query;
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -45,13 +60,13 @@ class ReturnModelResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        // Sesuaikan hak akses jika ingin dibatasi hanya untuk super_admin, atau biarkan true jika semua bisa akses
-        return Auth::user()->role === 'super_admin';
+        // Izinkan super_admin dan admin_cabang melihat menu di sidebar
+        return Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin_cabang']);
     }
 
     public static function canViewAny(): bool
     {
-        return Auth::user()->role === 'super_admin';
+        return Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin_cabang']);
     }
 
     public static function getPages(): array
