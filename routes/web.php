@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 Route::get('/admin/invoice/print/{reference_number}', [InvoiceController::class, 'print'])
     ->name('invoice.print')
-    ->middleware(['auth']); // Pastikan hanya yang sudah login yang bisa akses
+    ->middleware(['auth']);
 
 Route::get('/admin/purchase-orders/print/{record}', [PurchaseOrderController::class, 'print'])
     ->name('purchase-orders.print')
@@ -18,20 +18,23 @@ Route::get('/admin/purchase-orders/surat-jalan/{record}', [PurchaseOrderControll
     ->name('purchase-orders.surat-jalan')
     ->middleware(['auth']);
 
+// Route Cetak Surat Jalan Retur (Dipindahkan ke luar agar terbaca secara global)
+Route::get('/admin/return-models/{record}/print', function (ReturnModel $record) {
+    $record->load('items.product', 'branch');
+
+    return view('filament.resources.return-models.print-surat-jalan', [
+        'record' => $record
+    ]);
+})->name('return-models.print')->middleware(['web', 'auth']);
+
 // Gunakan satu rute ini saja yang mengarah ke Controller
 Route::get('/print-table', [InvoiceController::class, 'printTable'])
     ->name('print.table')
     ->middleware(['auth']);
 
-Route::get('/print-surat-jalan', [InvoiceController::class, 'printSuratJalan'])->name('print.surat.jalan');
+Route::get('/print-surat-jalan', [InvoiceController::class, 'printSuratJalan'])
+    ->name('print.surat.jalan');
+
 Route::get('/', function () {
     return view('welcome');
-
-    Route::get('/admin/return-models/{record}/print', function (ReturnModel $record) {
-        $record->load('items.product', 'branch');
-
-        return view('filament.resources.return-models.print-surat-jalan', [
-            'record' => $record
-        ]);
-    })->name('return-models.print')->middleware(['web', 'auth']);
 });
