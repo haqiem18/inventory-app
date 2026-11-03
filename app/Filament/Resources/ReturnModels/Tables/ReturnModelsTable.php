@@ -5,10 +5,10 @@ namespace App\Filament\Resources\ReturnModels\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Actions\EditAction;
-use Filament\Actions\Action;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\BulkActionGroup;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\BulkActionGroup;
 use App\Models\ReturnModel;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
@@ -85,10 +85,11 @@ class ReturnModelsTable
                                 $productStock = DB::table('products')->where('id', $item->item_id)->first();
                                 
                                 if ($productStock) {
+                                    // Menggunakan kolom 'quantity' sesuai struktur tabel products Anda
                                     if ($record->return_type === 'to_supplier') {
-                                        DB::table('products')->where('id', $item->item_id)->decrement('stock', $item->quantity);
+                                        DB::table('products')->where('id', $item->item_id)->decrement('quantity', $item->quantity);
                                     } elseif ($record->return_type === 'customer_to_hq' || $record->return_type === 'branch_to_hq') {
-                                        DB::table('products')->where('id', $item->item_id)->increment('stock', $item->quantity);
+                                        DB::table('products')->where('id', $item->item_id)->increment('quantity', $item->quantity);
                                     }
                                 }
                             }
