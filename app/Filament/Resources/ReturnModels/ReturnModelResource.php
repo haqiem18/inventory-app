@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class ReturnModelResource extends Resource
 {
@@ -40,6 +41,17 @@ class ReturnModelResource extends Resource
         return [
             //
         ];
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        // Sesuaikan hak akses jika ingin dibatasi hanya untuk super_admin, atau biarkan true jika semua bisa akses
+        return Auth::user()->role === 'super_admin';
+    }
+
+    public static function canViewAny(): bool
+    {
+        return Auth::user()->role === 'super_admin';
     }
 
     public static function getPages(): array

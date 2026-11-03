@@ -2,10 +2,14 @@
 
 namespace App\Filament\Resources\ReturnModels\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\Action;
+use App\Models\ReturnModel;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 
 class ReturnModelsTable
 {
@@ -13,17 +17,99 @@ class ReturnModelsTable
     {
         return $table
             ->columns([
-                //
+                TextColumn::make('reference_number')
+                    ->label('No. Referensi')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('return_type')
+                    ->label('Jenis Retur')
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'to_supplier' => 'Retur ke Supplier',
+                        'branch_to_hq' => 'Retur Cabang ke Pusat',
+                        'customer_to_hq' => 'Retur Konsumen ke Pusat',
+                        default => $state,
+                    })
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'to_supplier' => 'danger',
+                        'branch_to_hq' => 'warning',
+                        'customer_to_hq' => 'success',
+                        default => 'gray',
+                    }),
+
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'Approved' => 'success',
+                        'Pending' => 'warning',
+                        default => 'gray',
+                    }),
+
+                TextColumn::make('total_amount')
+                    ->label('Total Nilai')
+                    ->money('IDR')
+                    ->sortable(),
+
+                TextColumn::make('created_at')
+                    ->label('Tanggal')
+                    ->dateTime('d M Y H:i')
+                    ->sortable(),
             ])
             ->filters([
-                //
+                SelectFilter::make('return_type')
+                    ->label('Filter Jenis Retur')
+                    ->options([
+                        'to_supplier' => 'Retur ke Supplier',
+                        'branch_to_hq' => 'Retur Cabang ke Pusat',
+                        'customer_to_hq' => 'Retur Konsumen ke Pusat',
+                    ]),
             ])
-            ->recordActions([
+            ->actions([
                 EditAction::make(),
+
+                // Tombol Aksi Cepat untuk Approve dan Update Stok Otomatis
+                Action::make('approve')
+                    ->label('Approve')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->visible(fn(ReturnModel $record) => $record->status === 'Pending')
+                    ->action(function (ReturnModel $record) {
+                        DB::transaction(function () use ($record) {
+                            // Update status jadi Approved
+                            $record->update(['status' => 'Approved']);
+
+                            // Logika penyesuaian stok otomatis berdasarkan alur retur
+                            foreach ($record->items as $item) {
+                                // Contoh penyesuaian stok produk
+                                $productStock = DB::table('products')->where('id', $item->item_id)->first();
+
+                                if ($productStock) {
+                                    if ($record->return_type === 'to_supplier') {
+                                        // Retur ke supplier: Stok pusat berkurang
+                                        DB::table('products')->where('id', $item->item_id)->decrement('stock', $item->quantity);
+                                    } elseif ($record->return_type === 'customer_to_hq') {
+                                        // Retur konsumen ke pusat: Stok pusat bertambah kembali
+                                        DB::table('products')->where('id', $item->item_id)->increment('stock', $item->quantity);
+                                    } elseif ($record->return_type === 'branch_to_hq') {
+                                        // Retur cabang ke pusat: Stok pusat bertambah
+                                        DB::table('products')->where('id', $item->item_id)->increment('stock', $item->quantity);
+                                    }
+                                }
+                            }
+                        });
+
+                        Notification::make()
+                            ->title('Retur Berhasil Disetujui & Stok Diperbarui')
+                            ->success()
+                            ->send();
+                    }),
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+            ->bulkActions([
+                \Filament\Tables\Actions\BulkActionGroup::make([
+                    \Filament\Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
