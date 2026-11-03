@@ -8,11 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ReturnItem extends Model
 {
     protected $table = 'return_items';
-    
     protected $guarded = [];
 
-    public function returnTransaction(): BelongsTo
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(ReturnModel::class, 'return_id');
+        return $this->belongsTo(Product::class, 'product_id');
     }
 }
