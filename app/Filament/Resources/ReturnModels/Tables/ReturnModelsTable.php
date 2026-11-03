@@ -7,6 +7,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\BulkActionGroup;
 use App\Models\ReturnModel;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
@@ -24,14 +26,14 @@ class ReturnModelsTable
 
                 TextColumn::make('return_type')
                     ->label('Jenis Retur')
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'to_supplier' => 'Retur ke Supplier',
                         'branch_to_hq' => 'Retur Cabang ke Pusat',
                         'customer_to_hq' => 'Retur Konsumen ke Pusat',
                         default => $state,
                     })
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'to_supplier' => 'danger',
                         'branch_to_hq' => 'warning',
                         'customer_to_hq' => 'success',
@@ -41,7 +43,7 @@ class ReturnModelsTable
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'Approved' => 'success',
                         'Pending' => 'warning',
                         default => 'gray',
@@ -68,33 +70,24 @@ class ReturnModelsTable
             ])
             ->actions([
                 EditAction::make(),
-
-                // Tombol Aksi Cepat untuk Approve dan Update Stok Otomatis
+                
                 Action::make('approve')
                     ->label('Approve')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn(ReturnModel $record) => $record->status === 'Pending')
+                    ->visible(fn (ReturnModel $record) => $record->status === 'Pending')
                     ->action(function (ReturnModel $record) {
                         DB::transaction(function () use ($record) {
-                            // Update status jadi Approved
                             $record->update(['status' => 'Approved']);
 
-                            // Logika penyesuaian stok otomatis berdasarkan alur retur
                             foreach ($record->items as $item) {
-                                // Contoh penyesuaian stok produk
                                 $productStock = DB::table('products')->where('id', $item->item_id)->first();
-
+                                
                                 if ($productStock) {
                                     if ($record->return_type === 'to_supplier') {
-                                        // Retur ke supplier: Stok pusat berkurang
                                         DB::table('products')->where('id', $item->item_id)->decrement('stock', $item->quantity);
-                                    } elseif ($record->return_type === 'customer_to_hq') {
-                                        // Retur konsumen ke pusat: Stok pusat bertambah kembali
-                                        DB::table('products')->where('id', $item->item_id)->increment('stock', $item->quantity);
-                                    } elseif ($record->return_type === 'branch_to_hq') {
-                                        // Retur cabang ke pusat: Stok pusat bertambah
+                                    } elseif ($record->return_type === 'customer_to_hq' || $record->return_type === 'branch_to_hq') {
                                         DB::table('products')->where('id', $item->item_id)->increment('stock', $item->quantity);
                                     }
                                 }
@@ -108,8 +101,8 @@ class ReturnModelsTable
                     }),
             ])
             ->bulkActions([
-                \Filament\Tables\Actions\BulkActionGroup::make([
-                    \Filament\Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
