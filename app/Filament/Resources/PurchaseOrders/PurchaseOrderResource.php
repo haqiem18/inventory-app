@@ -14,6 +14,8 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PurchaseOrderResource extends Resource
 {
@@ -38,6 +40,16 @@ class PurchaseOrderResource extends Resource
             //
         ];
     }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()->role === 'super_admin';
+    }
+    public static function canViewAny(): bool
+    {
+        return Auth::user()->role === 'super_admin';
+    }
+
 
     public static function getPages(): array
     {
