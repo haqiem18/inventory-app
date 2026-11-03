@@ -6,6 +6,7 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use App\Models\ReturnModel;
+use App\Models\ProductStock;
 use Filament\Actions\Action as ActionsAction;
 use Filament\Actions\BulkActionGroup as ActionsBulkActionGroup;
 use Filament\Actions\DeleteBulkAction as ActionsDeleteBulkAction;
@@ -84,23 +85,28 @@ class ReturnModelsTable
                             $branchId = $record->branch_id ?? auth()->user()->branch_id;
 
                             foreach ($record->items as $item) {
-                                $productStock = DB::table('product_stocks')
-                                    ->where('product_id', $item->item_id)
-                                    ->where('branch_id', $branchId)
-                                    ->first();
+                                $productId = $item->product_id ?? $item->item_id;
 
-                                if ($productStock) {
-                                    if ($record->return_type === 'to_supplier') {
-                                        DB::table('product_stocks')
-                                            ->where('product_id', $item->item_id)
-                                            ->where('branch_id', $branchId)
-                                            ->decrement('quantity', $item->quantity);
-                                    } elseif ($record->return_type === 'customer_to_hq' || $record->return_type === 'branch_to_hq') {
-                                        DB::table('product_stocks')
-                                            ->where('product_id', $item->item_id)
-                                            ->where('branch_id', $branchId)
-                                            ->increment('quantity', $item->quantity);
-                                    }
+                                // Pastikan data stok di product_stocks ada, jika belum otomatis dibuat dengan stock 0
+                                ProductStock::firstOrCreate(
+                                    [
+                                        'product_id' => $productId,
+                                        'branch_id'  => $branchId,
+                                    ],
+                                    ['stock' => 0]
+                                );
+
+                                // Update stok menggunakan kolom 'stock'
+                                if ($record->return_type === 'to_supplier') {
+                                    DB::table('product_stocks')
+                                        ->where('product_id', $productId)
+                                        ->where('branch_id', $branchId)
+                                        ->decrement('stock', $item->quantity);
+                                } elseif ($record->return_type === 'customer_to_hq' || $record->return_type === 'branch_to_hq') {
+                                    DB::table('product_stocks')
+                                        ->where('product_id', $productId)
+                                        ->where('branch_id', $branchId)
+                                        ->increment('stock', $item->quantity);
                                 }
                             }
                         });

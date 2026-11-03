@@ -13,12 +13,13 @@ class StockMutationObserver
 
     public function creating(StockMutation $mutation): void
     {
-        // Pastikan status otomatis jadi 'pending' jika kosong/null
+        // Pastikan status otomatis jadi 'PENDING' jika kosong/null
         if (empty($mutation->status)) {
             $mutation->status = 'PENDING';
         }
 
         $mutation->subtotal = $mutation->quantity * $mutation->purchase_price;
+        
         if ($mutation->payment_status === 'lunas') {
             $mutation->paid_amount = $mutation->subtotal;
         }
@@ -27,6 +28,7 @@ class StockMutationObserver
     public function updating(StockMutation $mutation): void
     {
         $mutation->subtotal = $mutation->quantity * $mutation->purchase_price;
+        
         if ($mutation->payment_status === 'lunas') {
             $mutation->paid_amount = $mutation->subtotal;
         }
@@ -88,7 +90,11 @@ class StockMutationObserver
         if (empty($product_id) || empty($branch_id)) return;
 
         if ($type === 'Masuk') {
-            $stock = ProductStock::firstOrCreate(['product_id' => $product_id, 'branch_id' => $branch_id], ['stock' => 0]);
+            $stock = ProductStock::firstOrCreate(
+                ['product_id' => $product_id, 'branch_id' => $branch_id], 
+                ['stock' => 0]
+            );
+            
             $stock->increment('stock', $quantity * $multiplier);
 
             if ($action === 'apply') {
@@ -109,6 +115,7 @@ class StockMutationObserver
                 ['product_id' => $product_id, 'branch_id' => $branch_id],
                 ['stock' => 0]
             );
+            
             $origin->decrement('stock', $quantity * $multiplier);
             
             // Kurangi stok via FIFO di pusat
@@ -159,7 +166,10 @@ class StockMutationObserver
 
             foreach ($batches as $batch) {
                 if ($absQty <= 0) break;
-                $add = min($batch->quantity_initial - $batch->quantity_remaining, $absQty);
+                
+                // Diperbaiki menggunakan pengurangan (-) untuk menghitung sisa kapasitas batch yang terpakai
+                $add = min(($batch->quantity_initial - $batch->quantity_remaining), $absQty);
+                
                 $batch->increment('quantity_remaining', $add);
                 $batch->update(['status' => 'active']);
                 $absQty -= $add;
