@@ -21,7 +21,8 @@ class ReturnModelsTable
                 TextColumn::make('reference_number')
                     ->label('No. Referensi')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('bold'),
 
                 TextColumn::make('return_type')
                     ->label('Jenis Retur')
@@ -51,7 +52,8 @@ class ReturnModelsTable
                 TextColumn::make('total_amount')
                     ->label('Total Nilai')
                     ->money('IDR')
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('bold'),
 
                 TextColumn::make('created_at')
                     ->label('Tanggal')
@@ -70,6 +72,7 @@ class ReturnModelsTable
             ->actions([
                 ActionsEditAction::make(),
                 
+                // Tombol Approve
                 ActionsAction::make('approve')
                     ->label('Approve')
                     ->icon('heroicon-o-check-circle')
@@ -77,8 +80,6 @@ class ReturnModelsTable
                     ->requiresConfirmation()
                     ->visible(fn (ReturnModel $record) => $record->status === 'Pending')
                     ->action(function (ReturnModel $record) {
-                        // Ubah status menjadi Approved. 
-                        // Perubahan stok & pencatatan riwayat mutasi ditangani otomatis oleh ReturnModelObserver.
                         $record->update(['status' => 'Approved']);
 
                         Notification::make()
@@ -86,6 +87,14 @@ class ReturnModelsTable
                             ->success()
                             ->send();
                     }),
+
+                // Tombol Cetak Surat Jalan Retur (Konsisten dengan PO)
+                ActionsAction::make('surat_jalan')
+                    ->label('Surat Jalan')
+                    ->icon('heroicon-o-document-text')
+                    ->color('info')
+                    ->url(fn (ReturnModel $record) => route('return-models.print', $record))
+                    ->openUrlInNewTab(),
             ])
             ->bulkActions([
                 ActionsBulkActionGroup::make([
