@@ -56,6 +56,12 @@ class ReturnModelsTable
                         'Pending' => 'warning',
                         default => 'gray',
                     }),
+                
+                TextColumn::make('unit_price')
+                    ->label('Harga Satuan')
+                    ->money('IDR')
+                    ->sortable()
+                    ->weight('bold'),
 
                 TextColumn::make('total_amount')
                     ->label('Total Nilai')

@@ -86,7 +86,7 @@ class ReturnModelForm
                             ->required()
                             ->default(1),
 
-                        TextInput::make('total_amount')
+                        TextInput::make('unit_price')
                             ->label('Harga Satuan')
                             ->numeric()
                             ->required()
