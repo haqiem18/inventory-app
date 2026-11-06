@@ -35,7 +35,7 @@ class ReturnModel extends Model
             if ($model->relationLoaded('items') || $model->exists) {
                 $model->total_amount = $model->items->sum(function ($item) {
                     $qty = $item->quantity ?? 0;
-                    $price = $item->price ?? 0;
+                    $price = $item->total_amount ?? 0; // Sesuaikan dengan kolom unit_price
                     return $qty * $price;
                 });
             }
