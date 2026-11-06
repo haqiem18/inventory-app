@@ -60,12 +60,12 @@ class ReturnModelsTable
                 // Perbaikan: Ambil unit_price melalui relasi items
                 TextColumn::make('items.unit_price')
                     ->label('Harga Satuan')
-                    ->money('IDR')
+                    ->money('Rp')
                     ->listWithLineBreaks(),
 
                 TextColumn::make('total_amount')
                     ->label('Total Nilai')
-                    ->money('IDR')
+                    ->money('Rp')
                     ->sortable(),
 
                 TextColumn::make('created_at')
