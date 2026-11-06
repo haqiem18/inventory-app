@@ -24,7 +24,7 @@ class ReturnModelsTable
                     ->sortable()
                     ->weight('bold'),
 
-                // Tambahkan Kolom Barang / Produk di sini
+                // Kolom Barang / Produk
                 TextColumn::make('items.product.name')
                     ->label('Barang / Produk')
                     ->listWithLineBreaks()
@@ -54,14 +54,14 @@ class ReturnModelsTable
                     ->color(fn (string $state): string => match ($state) {
                         'Approved' => 'success',
                         'Pending' => 'warning',
-                        default => 'gray',
+                        'default' => 'gray',
                     }),
                 
-                TextColumn::make('unit_price')
+                // Perbaikan: Ambil unit_price melalui relasi items
+                TextColumn::make('items.unit_price')
                     ->label('Harga Satuan')
                     ->money('IDR')
-                    ->sortable()
-                    ->weight('bold'),
+                    ->listWithLineBreaks(),
 
                 TextColumn::make('total_amount')
                     ->label('Total Nilai')
@@ -102,7 +102,7 @@ class ReturnModelsTable
                             ->send();
                     }),
 
-                // Tombol Cetak Surat Jalan Retur (Konsisten dengan PO)
+                // Tombol Cetak Surat Jalan Retur
                 ActionsAction::make('surat_jalan')
                     ->label('Surat Jalan')
                     ->icon('heroicon-o-document-text')
