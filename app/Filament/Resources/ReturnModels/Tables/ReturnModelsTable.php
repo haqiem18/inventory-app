@@ -24,6 +24,14 @@ class ReturnModelsTable
                     ->sortable()
                     ->weight('bold'),
 
+                // Tambahkan Kolom Barang / Produk di sini
+                TextColumn::make('items.product.name')
+                    ->label('Barang / Produk')
+                    ->listWithLineBreaks()
+                    ->bulleted()
+                    ->limitList(2)
+                    ->expandableLimitedList(),
+
                 TextColumn::make('return_type')
                     ->label('Jenis Retur')
                     ->formatStateUsing(fn (string $state): string => match ($state) {

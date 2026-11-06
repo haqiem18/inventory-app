@@ -10,8 +10,9 @@ class ReturnItem extends Model
     protected $table = 'return_items';
     protected $guarded = [];
 
+    // Gunakan 'item_id' sebagai foreign key yang menghubungkan ke tabel products
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class, 'product_id');
+        return $this->belongsTo(Product::class, 'item_id');
     }
 }
