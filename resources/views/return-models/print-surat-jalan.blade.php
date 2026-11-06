@@ -28,7 +28,7 @@
         .sig-space { height: 60px; }
 
         @media print {
-            body { padding: 0; }
+            body { padding: 1; }
             .no-print { display: none; }
         }
     </style>
