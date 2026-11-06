@@ -66,8 +66,7 @@ class ReturnModelsTable
                 TextColumn::make('total_amount')
                     ->label('Total Nilai')
                     ->money('IDR')
-                    ->sortable()
-                    ->weight('bold'),
+                    ->sortable(),
 
                 TextColumn::make('created_at')
                     ->label('Tanggal')
