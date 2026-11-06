@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ReturnModel extends Model
 {
     protected $table = 'returns';
-
     protected $guarded = [];
 
     public function items(): HasMany
@@ -27,17 +26,6 @@ class ReturnModel extends Model
         static::creating(function ($model) {
             if (empty($model->branch_id)) {
                 $model->branch_id = auth()->user()->branch_id ?? 1;
-            }
-        });
-
-        // Kalkulasi otomatis total_amount saat disimpan/di-update
-        static::saving(function ($model) {
-            if ($model->relationLoaded('items') || $model->exists) {
-                $model->total_amount = $model->items->sum(function ($item) {
-                    $qty = $item->quantity ?? 0;
-                    $price = $item->total_amount ?? 0; // Sesuaikan dengan kolom unit_price
-                    return $qty * $price;
-                });
             }
         });
     }
