@@ -34,14 +34,14 @@ class ReturnModelsTable
 
                 TextColumn::make('return_type')
                     ->label('Jenis Retur')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'to_supplier' => 'Retur ke Supplier',
                         'branch_to_hq' => 'Retur Cabang ke Pusat',
                         'customer_to_hq' => 'Retur Konsumen ke Pusat',
                         default => $state,
                     })
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'to_supplier' => 'danger',
                         'branch_to_hq' => 'warning',
                         'customer_to_hq' => 'success',
@@ -51,22 +51,23 @@ class ReturnModelsTable
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'Approved' => 'success',
                         'Pending' => 'warning',
                         'default' => 'gray',
                     }),
-                
+
                 // Perbaikan: Ambil unit_price melalui relasi items
                 TextColumn::make('items.unit_price')
                     ->label('Harga Satuan')
-                    ->money('IDR')
+                    ->money('IDR', locale: 'id')
                     ->listWithLineBreaks(),
 
                 TextColumn::make('total_amount')
                     ->label('Total Nilai')
-                    ->money('IDR')
-                    ->sortable(),
+                    ->money('IDR', locale: 'id')
+                    ->sortable()
+                    ->weight('bold'),
 
                 TextColumn::make('created_at')
                     ->label('Tanggal')
@@ -84,14 +85,14 @@ class ReturnModelsTable
             ])
             ->actions([
                 ActionsEditAction::make(),
-                
+
                 // Tombol Approve
                 ActionsAction::make('approve')
                     ->label('Approve')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn (ReturnModel $record) => $record->status === 'Pending')
+                    ->visible(fn(ReturnModel $record) => $record->status === 'Pending')
                     ->action(function (ReturnModel $record) {
                         $record->update(['status' => 'Approved']);
 
@@ -106,7 +107,7 @@ class ReturnModelsTable
                     ->label('Surat Jalan')
                     ->icon('heroicon-o-document-text')
                     ->color('info')
-                    ->url(fn (ReturnModel $record) => route('return-models.print', $record))
+                    ->url(fn(ReturnModel $record) => route('return-models.print', $record))
                     ->openUrlInNewTab(),
             ])
             ->bulkActions([
