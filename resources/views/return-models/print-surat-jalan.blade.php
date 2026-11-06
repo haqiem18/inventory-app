@@ -104,8 +104,8 @@
                 <td class="center">{{ $index + 1 }}</td>
                 <td>{{ $item->product->name ?? '-' }}</td>
                 <td class="center">{{ $item->quantity ?? 0 }}</td>
-                <td class="text-right">Rp {{ number_format($item->price ?? 0, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format(($item->quantity * ($item->price ?? 0)), 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($item->unit_price ?? 0, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format(($item->quantity * ($item->unit_price ?? 0)), 0, ',', '.') }}</td>
             </tr>
             @endforeach
         </tbody>
