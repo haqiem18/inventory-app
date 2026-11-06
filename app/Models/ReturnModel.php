@@ -28,5 +28,14 @@ class ReturnModel extends Model
                 $model->branch_id = auth()->user()->branch_id ?? 1;
             }
         });
+
+        // Kalkulasi otomatis total_amount setiap kali data retur disimpan/di-update
+        static::saving(function ($model) {
+            if ($model->relationLoaded('items')) {
+                $model->total_amount = $model->items->sum(function ($item) {
+                    return ($item->quantity ?? 0) * ($item->unit_price ?? 0);
+                });
+            }
+        });
     }
 }
