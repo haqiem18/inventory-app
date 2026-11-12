@@ -129,6 +129,9 @@ class HutangResource extends Resource
                     }),
 
             ])
+            // ⚡ Agar data laporan hutang terbaru selalu berada di baris paling atas
+            ->defaultSort('created_at', 'desc')
+            
             ->actions([
                 Action::make('bayar')
                     ->label('Bayar')

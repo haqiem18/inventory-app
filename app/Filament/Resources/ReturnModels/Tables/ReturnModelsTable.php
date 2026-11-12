@@ -74,6 +74,9 @@ class ReturnModelsTable
                     ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
+            // ⚡ Agar data transaksi terbaru selalu berada di baris paling atas
+            ->defaultSort('created_at', 'desc')
+            
             ->filters([
                 SelectFilter::make('return_type')
                     ->label('Filter Jenis Retur')

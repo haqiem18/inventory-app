@@ -127,6 +127,9 @@ class PenjualanResource extends Resource
                     ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
                 TextColumn::make('salesPerson.name')->label('Sales')->sortable(),
             ])
+            // ⚡ Agar data transaksi penjualan terbaru selalu berada di baris paling atas
+            ->defaultSort('created_at', 'desc')
+            
             ->filters([
                 SelectFilter::make('branch_id')
                     ->label('Filter Cabang')

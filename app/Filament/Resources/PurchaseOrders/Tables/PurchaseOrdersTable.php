@@ -57,6 +57,9 @@ class PurchaseOrdersTable
                             ->formatStateUsing(fn ($state): string => 'Rp ' . number_format($state ?? 0, 0, ',', '.'))
                     ),
             ])
+            // ⚡ Agar data PO terbaru selalu berada di baris paling atas
+            ->defaultSort('created_at', 'desc')
+            
             ->filters([
                 // Tambahkan filter jika diperlukan di sini
             ])

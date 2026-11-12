@@ -114,6 +114,9 @@ class PenggunaanResource extends Resource
                     ->summarize(Sum::make()->label('Grand Total')->formatStateUsing(fn($state): string => 'Rp ' . number_format($state ?? 0, 0, ',', '.')))
                     ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
             ])
+            // ⚡ Agar data laporan penggunaan terbaru selalu berada di baris paling atas
+            ->defaultSort('created_at', 'desc')
+            
             ->filters([
                 SelectFilter::make('branch_id')
                     ->label('Filter Cabang')

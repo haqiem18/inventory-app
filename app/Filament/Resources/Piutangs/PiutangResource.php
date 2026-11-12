@@ -54,7 +54,7 @@ class PiutangResource extends Resource
                 // 1. KOLOM TOTAL TAGIHAN
                 TextColumn::make('subtotal')
                     ->label('Total Tagihan')
-                    ->state(fn($record) => ($record->price ?? 0) * ($record->quantity ?? 0)) // <-- Tambahkan baris ini agar sinkron
+                    ->state(fn($record) => ($record->price ?? 0) * ($record->quantity ?? 0))
                     ->summarize(
                         Summarizer::make()
                             ->using(fn($query) => $query->sum(DB::raw('price * quantity')))
@@ -116,6 +116,9 @@ class PiutangResource extends Resource
                     ->sortable()
                     ->searchable(),
             ])
+            // ⚡ Agar data laporan piutang terbaru selalu berada di baris paling atas
+            ->defaultSort('created_at', 'desc')
+            
             ->actions([
                 Action::make('bayar')
                     ->label('Bayar')

@@ -11,9 +11,9 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter; // Tambahkan ini
-use Filament\Forms\Components\DatePicker; // Tambahkan ini
-use Illuminate\Database\Eloquent\Builder; // Tambahkan ini untuk tipe Builder
+use Filament\Tables\Filters\Filter; 
+use Filament\Forms\Components\DatePicker; 
+use Illuminate\Database\Eloquent\Builder; 
 use Illuminate\Support\Facades\Auth;
 
 class StockMutationsTable
@@ -22,7 +22,6 @@ class StockMutationsTable
     {
         return $table
             ->columns([
-                // ... (kolom tetap sama seperti sebelumnya)
                 TextColumn::make('reference_number')
                     ->label('No. Referensi')
                     ->searchable()
@@ -51,9 +50,8 @@ class StockMutationsTable
                     ->summarize(Sum::make()->label('Total Qty')),
                 TextColumn::make('purchase_price')
                     ->label('Harga Beli (Rp)')
-                    ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.')) // Biarkan ini menangani format
+                    ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.'))
                     ->sortable()
-                    // Ganti formatStateUsing dengan hidden()
                     ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
 
                 TextColumn::make('subtotal')
@@ -61,9 +59,11 @@ class StockMutationsTable
                     ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.'))
                     ->sortable()
                     ->summarize(Sum::make()->label('Grand Total')->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.')))
-                    // Ganti formatStateUsing dengan hidden()
                     ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
             ])
+            // ⚡ Agar transaksi terbaru otomatis berada di baris paling atas
+            ->defaultSort('created_at', 'desc')
+            
             ->filters([
                 SelectFilter::make('branch_id')
                     ->label('Filter Cabang')
@@ -99,17 +99,13 @@ class StockMutationsTable
             ])
 
             ->recordActions([
-                //EditAction::make(),
-                //DeleteAction::make(),
                 Action::make('Accept')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    // Tombol hanya muncul jika status PENDING
                     ->visible(fn($record) => $record->status === 'PENDING')
                     ->requiresConfirmation()
                     ->modalDescription('Apakah Anda yakin ingin terima data ini?')
                     ->action(function ($record, $livewire) {
-                        // Proses update status
                         $record->update(['status' => 'RECEIVED']);
 
                         \Filament\Notifications\Notification::make()
@@ -117,7 +113,6 @@ class StockMutationsTable
                             ->success()
                             ->send();
 
-                        // Opsional: Refresh tabel agar tombol langsung hilang
                         $livewire->dispatch('refreshComponent');
                     }),
 
@@ -125,14 +120,10 @@ class StockMutationsTable
                     ->label('Void')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    // Tombol hanya muncul jika statusnya RECEIVED (atau sesuai kebijakan Anda)
-                    // Jika ingin bisa VOID yang statusnya PENDING juga, ubah kondisinya
                     ->visible(fn($record) => $record->status === 'RECEIVED')
                     ->requiresConfirmation()
                     ->modalDescription('Apakah Anda yakin ingin membatalkan transaksi ini? Stok akan dikembalikan.')
                     ->action(function ($record, $livewire) {
-                        // Observer akan otomatis menjalankan processStock('revert') 
-                        // karena kita mengubah status ke VOID
                         $record->update(['status' => 'VOID']);
 
                         \Filament\Notifications\Notification::make()

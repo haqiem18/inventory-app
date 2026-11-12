@@ -178,7 +178,7 @@ class TerimaBarangResource extends Resource
                     ->description(fn($record): string => "SKU: {$record->product->sku}"),
                 TextColumn::make('branch.name')->label('Cabang Asal'),
 
-                TextColumn::make('toBranch.name') // Menggunakan relasi ke model Branch
+                TextColumn::make('toBranch.name') 
                     ->label('Tujuan')
                     ->placeholder('-'),
                 BadgeColumn::make('status')
@@ -200,7 +200,7 @@ class TerimaBarangResource extends Resource
                         'mutasi' => 'Mutasi Cabang',
                         'penjualan' => 'Penjualan',
                         default => ucfirst($state),
-                    }), // Di dalam method table() -> columns()
+                    }), 
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -217,9 +217,8 @@ class TerimaBarangResource extends Resource
 
                 TextColumn::make('price')
                     ->label('Harga Satuan (Rp)')
-                    ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.')) // Biarkan ini menangani format
+                    ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.')) 
                     ->sortable()
-                    // Ganti formatStateUsing dengan hidden()
                     ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
 
                 TextColumn::make('subtotal')
@@ -227,9 +226,11 @@ class TerimaBarangResource extends Resource
                     ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.'))
                     ->sortable()
                     ->summarize(Sum::make()->label('Grand Total')->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.')))
-                    // Ganti formatStateUsing dengan hidden()
                     ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
             ])
+            // ⚡ Agar data transaksi terbaru selalu berada di baris paling atas
+            ->defaultSort('created_at', 'desc')
+            
             ->filters([
                 SelectFilter::make('branch_id')
                     ->label('Filter Cabang')
@@ -265,17 +266,13 @@ class TerimaBarangResource extends Resource
             ])
 
             ->recordActions([
-                //EditAction::make(),
-                //DeleteAction::make(),
                 Action::make('Accept')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    // Tombol hanya muncul jika status PENDING
                     ->visible(fn($record) => $record->status === 'PENDING')
                     ->requiresConfirmation()
                     ->modalDescription('Apakah Anda yakin ingin terima data ini?')
                     ->action(function ($record, $livewire) {
-                        // Proses update status
                         $record->update(['status' => 'RECEIVED']);
 
                         \Filament\Notifications\Notification::make()
@@ -283,7 +280,6 @@ class TerimaBarangResource extends Resource
                             ->success()
                             ->send();
 
-                        // Opsional: Refresh tabel agar tombol langsung hilang
                         $livewire->dispatch('refreshComponent');
                     }),
             ])
@@ -305,8 +301,6 @@ class TerimaBarangResource extends Resource
     {
         return [
             'index' => \App\Filament\Resources\TerimaBarangs\Pages\ListTerimaBarangs::route('/'),
-            //'create' => \App\Filament\Resources\TerimaBarangs\Pages\CreateTerimaBarang::route('/create'),
-            //'edit' => \App\Filament\Resources\TerimaBarangs\Pages\EditTerimaBarang::route('/{record}/edit'),
         ];
     }
 }
