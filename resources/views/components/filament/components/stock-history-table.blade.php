@@ -10,10 +10,11 @@
             </tr>
         </thead>
         <tbody>
-            @forelse($mutations as$mutation)
+            @forelse($mutations as $mutation)
                 @php
                     $isVoid = ($mutation->status === 'VOID');
-                    $isMasuk = !$isVoid && ($mutation->to_branch_id ==$currentBranchId || $mutation->type === 'Masuk');$isKeluar = !$isVoid && ($mutation->branch_id == $currentBranchId &&$mutation->to_branch_id);
+                    $isMasuk = !$isVoid && ($mutation->to_branch_id == $currentBranchId || $mutation->type === 'Masuk');
+                    $isKeluar = !$isVoid && ($mutation->branch_id == $currentBranchId && $mutation->to_branch_id);
                 @endphp
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); {{ $isVoid ? 'opacity: 0.6;' : '' }}">
                     <!-- Tanggal -->
@@ -35,7 +36,7 @@
                             <span style="display: inline-block; padding: 4px 8px; font-size: 12px; font-weight: 500; border-radius: 6px; background-color: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">
                                 OUT
                             </span>
-                        @elseif($isMasuk &&$mutation->to_branch_id)
+                        @elseif($isMasuk && $mutation->to_branch_id)
                             <span style="display: inline-block; padding: 4px 8px; font-size: 12px; font-weight: 500; border-radius: 6px; background-color: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3);">
                                 Mutasi Masuk
                             </span>
@@ -67,4 +68,11 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="padding: 32px 16px; text-align: center
+                    <td colspan="5" style="padding: 32px 16px; text-align: center; color: #6b7280;">
+                        Tidak ada riwayat mutasi untuk barang ini di cabang sekarang.
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
