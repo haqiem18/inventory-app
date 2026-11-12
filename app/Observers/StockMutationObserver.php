@@ -85,7 +85,6 @@ class StockMutationObserver
         $to_branch_id = $isRevert ? $mutation->getOriginal('to_branch_id') : $mutation->to_branch_id;
         $quantity     = $isRevert ? $mutation->getOriginal('quantity') : $mutation->quantity;
         $type         = $isRevert ? $mutation->getOriginal('type') : $mutation->type;
-        $multiplier   = $isRevert ? -1 : 1;
 
         if (empty($product_id) || empty($branch_id)) return;
 
@@ -95,50 +94,52 @@ class StockMutationObserver
                 ['stock' => 0]
             );
             
-            $stock->increment('stock', $quantity * $multiplier);
+            $stockChange = $isRevert ? -$quantity : $quantity;
+            $stock->increment('stock', $stockChange);
 
             if ($action === 'apply') {
-                StockBatch::create([
-                    'stock_mutation_id'  => $mutation->id,
-                    'product_id'         => $product_id,
-                    'quantity_initial'   => $quantity,
-                    'quantity_remaining' => $quantity,
-                    'purchase_price'     => $mutation->purchase_price,
-                    'status'             => 'active',
-                ]);
+                StockBatch::firstOrCreate(
+                    ['stock_mutation_id' => $mutation->id],
+                    [
+                        'product_id'         => $product_id,
+                        'quantity_initial'   => $quantity,
+                        'quantity_remaining' => $quantity,
+                        'purchase_price'     => $mutation->purchase_price,
+                        'status'             => 'active',
+                    ]
+                );
             } else {
                 StockBatch::where('stock_mutation_id', $mutation->id)->delete();
             }
         } elseif ($type === 'OUT') {
-            // 1. Kurangi stok di cabang asal (Pusat)
+            // 1. Kurangi/Kembalikan stok di cabang asal
             $origin = ProductStock::firstOrCreate(
                 ['product_id' => $product_id, 'branch_id' => $branch_id],
                 ['stock' => 0]
             );
             
-            $origin->decrement('stock', $quantity * $multiplier);
+            if ($isRevert) {
+                $origin->increment('stock', $quantity);
+                $this->processFifo($product_id, -$quantity);
+            } else {
+                $origin->decrement('stock', $quantity);
+                $this->processFifo($product_id, $quantity);
+            }
             
-            // Kurangi stok via FIFO di pusat
-            $this->processFifo($product_id, $quantity * $multiplier);
-
-            // 2. Tambah/Kurangi stok di cabang tujuan (to_branch_id)
+            // 2. Tambah/Kurangi stok di cabang tujuan (to_branch_id) jika ada
             if (!empty($to_branch_id)) {
+                $destStock = ProductStock::firstOrCreate(
+                    [
+                        'product_id' => $product_id,
+                        'branch_id'  => $to_branch_id
+                    ],
+                    ['stock' => 0]
+                );
+
                 if ($action === 'apply') {
-                    $destStock = ProductStock::firstOrCreate(
-                        [
-                            'product_id' => $product_id,
-                            'branch_id'  => $to_branch_id
-                        ],
-                        ['stock' => 0]
-                    );
                     $destStock->increment('stock', $quantity);
-                } else { // revert / void
-                    $destStock = ProductStock::where('product_id', $product_id)
-                        ->where('branch_id', $to_branch_id)
-                        ->first();
-                    if ($destStock) {
-                        $destStock->decrement('stock', $quantity);
-                    }
+                } else { 
+                    $destStock->decrement('stock', $quantity);
                 }
             }
         }
@@ -146,7 +147,7 @@ class StockMutationObserver
 
     private function processFifo($product_id, $qtyChange)
     {
-        if ($qtyChange > 0) { // Barang Keluar
+        if ($qtyChange > 0) { // Barang Keluar (Mengurangi FIFO)
             $batches = StockBatch::where('product_id', $product_id)
                 ->where('quantity_remaining', '>', 0)
                 ->orderBy('created_at', 'asc')->get();
@@ -155,10 +156,12 @@ class StockMutationObserver
                 if ($qtyChange <= 0) break;
                 $deduct = min($batch->quantity_remaining, $qtyChange);
                 $batch->decrement('quantity_remaining', $deduct);
-                if ($batch->quantity_remaining <= 0) $batch->update(['status' => 'exhausted']);
+                if ($batch->quantity_remaining <= 0) {
+                    $batch->update(['status' => 'exhausted']);
+                }
                 $qtyChange -= $deduct;
             }
-        } else { // Revert Barang Keluar
+        } else { // Revert Barang Keluar (Mengembalikan kapasitas FIFO)
             $absQty = abs($qtyChange);
             $batches = StockBatch::where('product_id', $product_id)
                 ->where('status', 'exhausted')
@@ -167,12 +170,16 @@ class StockMutationObserver
             foreach ($batches as $batch) {
                 if ($absQty <= 0) break;
                 
-                // Diperbaiki menggunakan pengurangan (-) untuk menghitung sisa kapasitas batch yang terpakai
-                $add = min(($batch->quantity_initial - $batch->quantity_remaining), $absQty);
+                $capacitySpace = $batch->quantity_initial - $batch->quantity_remaining;
+                $add = min($capacitySpace, $absQty);
                 
-                $batch->increment('quantity_remaining', $add);
-                $batch->update(['status' => 'active']);
-                $absQty -= $add;
+                if ($add > 0) {
+                    $batch->increment('quantity_remaining', $add);
+                    if ($batch->quantity_remaining > 0) {
+                        $batch->update(['status' => 'active']);
+                    }
+                    $absQty -= $add;
+                }
             }
         }
     }
