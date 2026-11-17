@@ -28,11 +28,12 @@ class BranchResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->role === ['super_admin','admin_finance'];
+        return in_array(Auth::user()->role, ['super_admin', 'admin_finance']);
     }
+
     public static function canViewAny(): bool
     {
-        return Auth::user()->role === ['super_admin','admin_finance'];
+        return in_array(Auth::user()->role, ['super_admin', 'admin_finance']);
     }
     public static function form(Schema $schema): Schema
     {
