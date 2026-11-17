@@ -61,12 +61,12 @@ class ReturnModelResource extends Resource
     public static function shouldRegisterNavigation(): bool
     {
         // Izinkan super_admin dan admin_cabang melihat menu di sidebar
-        return Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin_cabang']);
+        return Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin_cabang','admin_finance']);
     }
 
     public static function canViewAny(): bool
     {
-        return Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin_cabang']);
+        return Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin_cabang','admin_finance']);
     }
 
     public static function getPages(): array

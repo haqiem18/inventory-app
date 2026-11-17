@@ -28,11 +28,12 @@ class StockMutationResource extends Resource
     protected static ?string $modelLabel = 'barang masuk';
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->role === 'super_admin';
+        return in_array(Auth::user()->role, ['super_admin', 'admin_finance']);
     }
+
     public static function canViewAny(): bool
     {
-        return Auth::user()->role === 'super_admin';
+        return in_array(Auth::user()->role, ['super_admin', 'admin_finance']);
     }
 
     public static function form(Schema $schema): Schema
@@ -41,19 +42,19 @@ class StockMutationResource extends Resource
     }
 
     public static function getEloquentQuery(): Builder
-{
-    // Hanya ambil data dengan type 'Masuk'
-    $query = parent::getEloquentQuery()->where('type', 'Masuk');
+    {
+        // Hanya ambil data dengan type 'Masuk'
+        $query = parent::getEloquentQuery()->where('type', 'Masuk');
 
-    $user = Auth::user(); 
+        $user = Auth::user();
 
-    // Jika admin_cabang, batasi hanya untuk cabang mereka
-    if ($user && $user->role === 'admin_cabang') {
-        $query->where('branch_id', $user->branch_id);
+        // Jika admin_cabang, batasi hanya untuk cabang mereka
+        if ($user && $user->role === 'admin_cabang') {
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        return $query;
     }
-
-    return $query;
-}
 
     public static function table(Table $table): Table
     {
