@@ -118,7 +118,7 @@ class PiutangResource extends Resource
             ])
             // ⚡ Agar data laporan piutang terbaru selalu berada di baris paling atas
             ->defaultSort('created_at', 'desc')
-            
+
             ->actions([
                 Action::make('bayar')
                     ->label('Bayar')
@@ -131,7 +131,7 @@ class PiutangResource extends Resource
                             ->prefix('Rp')
                             ->required()
                             ->rules([
-                                fn ($record) => function ($attribute, $value, $fail) use ($record) {
+                                fn($record) => function ($attribute, $value, $fail) use ($record) {
                                     $tagihan = ($record->price ?? 0) * ($record->quantity ?? 0);
                                     $terbayar = $record->debtPayments()->sum('amount_paid');
                                     $sisaPiutang = $tagihan - $terbayar;
@@ -158,7 +158,7 @@ class PiutangResource extends Resource
                         if ($totalTerbayar >= $totalTagihan) {
                             $record->update(['payment_status' => 'lunas']);
                         }
-                        
+
                         Notification::make()
                             ->title('Pembayaran Berhasil')
                             ->body('Pembayaran sebesar Rp ' . number_format($data['amount_paid'], 0, ',', '.') . ' telah dicatat.')
@@ -205,11 +205,12 @@ class PiutangResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->role === 'super_admin';
+        return in_array(Auth::user()->role, ['super_admin', 'admin_finance']);
     }
+
     public static function canViewAny(): bool
     {
-        return Auth::user()->role === 'super_admin';
+        return in_array(Auth::user()->role, ['super_admin', 'admin_finance']);
     }
     public static function getEloquentQuery(): Builder
     {

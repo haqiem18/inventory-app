@@ -32,12 +32,12 @@ class PenggunaanResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->role === 'super_admin';
+        return in_array(Auth::user()->role, ['super_admin', 'admin_finance']);
     }
 
     public static function canViewAny(): bool
     {
-        return Auth::user()->role === 'super_admin';
+        return in_array(Auth::user()->role, ['super_admin', 'admin_finance']);
     }
 
     public static function getEloquentQuery(): Builder
@@ -116,7 +116,7 @@ class PenggunaanResource extends Resource
             ])
             // ⚡ Agar data laporan penggunaan terbaru selalu berada di baris paling atas
             ->defaultSort('created_at', 'desc')
-            
+
             ->filters([
                 SelectFilter::make('branch_id')
                     ->label('Filter Cabang')

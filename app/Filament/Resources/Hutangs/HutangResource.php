@@ -38,11 +38,12 @@ class HutangResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->role === 'super_admin';
+        return in_array(Auth::user()->role, ['super_admin', 'admin_finance']);
     }
+
     public static function canViewAny(): bool
     {
-        return Auth::user()->role === 'super_admin';
+        return in_array(Auth::user()->role, ['super_admin', 'admin_finance']);
     }
     public static function form(Schema $schema): Schema
     {
@@ -131,7 +132,7 @@ class HutangResource extends Resource
             ])
             // ⚡ Agar data laporan hutang terbaru selalu berada di baris paling atas
             ->defaultSort('created_at', 'desc')
-            
+
             ->actions([
                 Action::make('bayar')
                     ->label('Bayar')
@@ -144,7 +145,7 @@ class HutangResource extends Resource
                             ->prefix('Rp')
                             ->required()
                             ->rules([
-                                fn ($record) => function ($attribute, $value, $fail) use ($record) {
+                                fn($record) => function ($attribute, $value, $fail) use ($record) {
                                     $tagihan = ($record->purchase_price ?? 0) * ($record->quantity ?? 0);
                                     $terbayar = $record->debtPayments()->sum('amount_paid');
                                     $sisaHutang = $tagihan - $terbayar;
@@ -171,7 +172,7 @@ class HutangResource extends Resource
                         if ($totalTerbayar >= $totalTagihan) {
                             $record->update(['payment_status' => 'lunas']);
                         }
-                        
+
                         Notification::make()
                             ->title('Pembayaran Berhasil')
                             ->body('Pembayaran sebesar Rp ' . number_format($data['amount_paid'], 0, ',', '.') . ' telah dicatat.')
