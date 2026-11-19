@@ -22,6 +22,17 @@ class ProductStockResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::ArchiveBox;
     protected static ?string $navigationLabel = 'Manajemen Stok';
     protected static ?string $pluralModelLabel = 'Manajemen Stok';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return in_array(Auth::user()?->role, ['super_admin', 'admin_cabang', 'admin_finance']);
+    }
+
+    public static function canViewAny(): bool
+    {
+        return in_array(Auth::user()?->role, ['super_admin', 'admin_cabang', 'admin_finance']);
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -68,7 +79,7 @@ class ProductStockResource extends Resource
                 SelectFilter::make('branch_id')
                     ->label('Filter Cabang')
                     ->relationship('branch', 'name')
-                    ->visible(fn() => Auth::user()->role === 'super_admin'),
+                    ->visible(fn() => Auth::user()?->role === 'super_admin'),
             ])
             ->actions([
                 Action::make('riwayat')
@@ -80,7 +91,7 @@ class ProductStockResource extends Resource
                     ->modalCancelActionLabel('Tutup')
                     ->modalContent(function ($record) {
                         // Proteksi akses
-                        if (Auth::user()->role === 'admin_cabang' && $record->branch_id !== Auth::user()->branch_id) {
+                        if (Auth::user()?->role === 'admin_cabang' && $record->branch_id !== Auth::user()?->branch_id) {
                             return "Anda tidak memiliki akses ke riwayat cabang ini.";
                         }
 
