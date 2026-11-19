@@ -4,8 +4,24 @@ namespace App\Filament\Resources\Spareparts\Pages;
 
 use App\Filament\Resources\Spareparts\SparepartResource;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\Auth;
 
 class CreateSparepart extends CreateRecord
 {
     protected static string $resource = SparepartResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        if (Auth::user()?->role === 'teknisi') {
+            $data['user_id'] = Auth::id();
+            $data['branch_id'] = Auth::user()->branch_id ?? $data['branch_id'];
+        }
+
+        return $data;
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }
