@@ -26,7 +26,7 @@ class CreateSparepart extends CreateRecord
 
     public function getTitle(): string
     {
-        return 'Penggantian Spearpart';
+        return 'Penggantian Sparepart';
     }
 
     protected function getFormActions(): array

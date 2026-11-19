@@ -14,7 +14,7 @@ class ListSpareparts extends ListRecords
     {
         return [
             CreateAction::make()
-            ->label('Tambah Penggantian Spearpart'),
+            ->label('Tambah Penggantian Sparepart'),
         ];
     }
 }
