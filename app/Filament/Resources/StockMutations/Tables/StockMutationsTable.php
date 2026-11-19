@@ -29,7 +29,7 @@ class StockMutationsTable
 
                 TextColumn::make('mutation_date')
                     ->label('Tanggal')
-                    ->date()
+                    ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('product.name')
                     ->label('Barang')

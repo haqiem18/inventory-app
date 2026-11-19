@@ -19,7 +19,7 @@ class SparepartsTable
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('tanggal')
-                    ->label('Tgl')
+                    ->label('Tanggal')
                     ->date('d M Y')
                     ->sortable(),
 
