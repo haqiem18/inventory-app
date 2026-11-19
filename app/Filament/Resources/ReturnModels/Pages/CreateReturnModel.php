@@ -12,4 +12,22 @@ class CreateReturnModel extends CreateRecord
     {
         return $this->getResource()::getUrl('index');
     }
+    public function getTitle(): string
+    {
+        return 'Tambah Retur';
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction()
+                ->label('Simpan'),
+
+            $this->getCreateAnotherFormAction()
+                ->label('Simpan & Buat Lagi'),
+
+            $this->getCancelFormAction()
+                ->label('Batal'),
+        ];
+    }
 }
