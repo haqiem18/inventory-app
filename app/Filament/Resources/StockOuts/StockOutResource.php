@@ -12,7 +12,6 @@ use Filament\Actions\BulkAction as ActionsBulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -42,12 +41,22 @@ class StockOutResource extends Resource
     protected static ?string $pluralModelLabel = 'Barang Keluar';
     protected static ?string $modelLabel = 'Barang Keluar';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return in_array(Auth::user()?->role, ['super_admin', 'admin_cabang', 'admin_finance']);
+    }
+
+    public static function canViewAny(): bool
+    {
+        return in_array(Auth::user()?->role, ['super_admin', 'admin_cabang', 'admin_finance']);
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = \App\Models\StockMutation::query();
 
-        if (auth()->check() && auth()->user()->role === 'admin_cabang') {
-            $branchId = auth()->user()->branch_id;
+        if (Auth::check() && Auth::user()?->role === 'admin_cabang') {
+            $branchId = Auth::user()->branch_id;
             $query->where('branch_id', $branchId);
         }
 
@@ -89,8 +98,8 @@ class StockOutResource extends Resource
                     ->searchable()
                     ->preload()
                     ->live()
-                    ->default(fn() => Auth::user()->role === 'admin_cabang' ? Auth::user()->branch_id : null)
-                    ->disabled(fn() => Auth::user()->role === 'admin_cabang')
+                    ->default(fn() => Auth::user()?->role === 'admin_cabang' ? Auth::user()->branch_id : null)
+                    ->disabled(fn() => Auth::user()?->role === 'admin_cabang')
                     ->dehydrated(true),
 
                 Select::make('to_branch_id')
@@ -127,7 +136,6 @@ class StockOutResource extends Resource
                     ->visible(fn($get) => $get('sub_type') === 'penjualan')
                     ->default('lunas'),
 
-                // --- REPEATER MULTI BARANG KELUAR ---
                 Repeater::make('items')
                     ->label('Daftar Barang Keluar')
                     ->schema([
@@ -166,7 +174,7 @@ class StockOutResource extends Resource
                             ->required()
                             ->numeric()
                             ->prefix('Rp')
-                            ->visible(fn(): bool => Auth::user()->role === 'super_admin')
+                            ->visible(fn(): bool => Auth::user()?->role === 'super_admin')
                             ->columnSpan(3),
 
                         TextInput::make('price')
@@ -174,7 +182,7 @@ class StockOutResource extends Resource
                             ->required()
                             ->numeric()
                             ->prefix('Rp')
-                            ->visible(fn(): bool => Auth::user()->role === 'super_admin')
+                            ->visible(fn(): bool => Auth::user()?->role === 'super_admin')
                             ->columnSpan(3),
                     ])
                     ->columns(12)
@@ -234,13 +242,13 @@ class StockOutResource extends Resource
                     ->label('Harga Beli')
                     ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.'))
                     ->sortable()
-                    ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
+                    ->hidden(fn(): bool => Auth::user()?->role !== 'super_admin'),
 
                 TextColumn::make('price')
                     ->label('Harga Jual')
                     ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.'))
                     ->sortable()
-                    ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
+                    ->hidden(fn(): bool => Auth::user()?->role !== 'super_admin'),
 
                 TextColumn::make('subtotal')
                     ->label('Total Harga')
@@ -252,17 +260,16 @@ class StockOutResource extends Resource
                             ->using(fn($query) => $query->sum('subtotal'))
                             ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.'))
                     )
-                    ->hidden(fn(): bool => Auth::user()->role !== 'super_admin'),
+                    ->hidden(fn(): bool => Auth::user()?->role !== 'super_admin'),
                 TextColumn::make('salesPerson.name')->label('Sales')->sortable(),
             ])
-            // ⚡ Agar data transaksi terbaru selalu berada di baris paling atas
             ->defaultSort('created_at', 'desc')
-            
+
             ->filters([
                 SelectFilter::make('branch_id')
                     ->label('Filter Cabang')
                     ->relationship('branch', 'name')
-                    ->visible(fn() => Auth::user()->role === 'super_admin'),
+                    ->visible(fn() => Auth::user()?->role === 'super_admin'),
 
                 SelectFilter::make('sub_type')
                     ->label('Filter Keperluan')
@@ -272,7 +279,7 @@ class StockOutResource extends Resource
                         'mutasi' => 'Mutasi',
                         'penjualan' => 'Penjualan',
                     ])
-                    ->visible(fn() => Auth::user()->role === 'super_admin'),
+                    ->visible(fn() => Auth::user()?->role === 'super_admin'),
 
                 Filter::make('mutation_date')
                     ->form([
@@ -303,7 +310,7 @@ class StockOutResource extends Resource
             ])
             ->recordActions([
                 EditAction::make()
-                    ->visible(fn(): bool => Auth::user()->role === 'super_admin')
+                    ->visible(fn(): bool => Auth::user()?->role === 'super_admin')
                     ->mutateRecordDataUsing(function (array $data, StockMutation $record): array {
                         $relatedItems = StockMutation::where('reference_number', $record->reference_number)->get();
 
@@ -370,11 +377,10 @@ class StockOutResource extends Resource
                     ->label('Cetak')
                     ->icon('heroicon-o-printer')
                     ->color('info')
-                    ->visible(fn(): bool => auth()->user()->role === 'super_admin')
+                    ->visible(fn(): bool => Auth::user()?->role === 'super_admin')
                     ->url(fn($record) => route('invoice.print', ['reference_number' => $record->reference_number]))
                     ->openUrlInNewTab(),
 
-                // Tombol Cetak Surat Jalan Per Baris
                 Action::make('cetak_surat_jalan')
                     ->label('Surat Jalan')
                     ->icon('heroicon-o-document-text')
@@ -419,7 +425,6 @@ class StockOutResource extends Resource
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
 
-                    // Tombol Bulk Cetak Surat Jalan Terpilih
                     ActionsBulkAction::make('bulk_surat_jalan')
                         ->label('Cetak Surat Jalan Terpilih')
                         ->icon('heroicon-o-document-text')
