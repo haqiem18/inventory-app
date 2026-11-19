@@ -30,6 +30,7 @@ class UserForm
                     'super_admin' => 'Super Admin',
                     'admin_cabang' => 'Admin Cabang',
                     'admin_finance' => 'Admin Finance',
+                    'teknisi' => 'Teknisi',
                 ])
                 ->required(),
         ]);
