@@ -42,7 +42,8 @@ class SparepartsTable
                 TextColumn::make('alasan_pergantian')
                     ->label('Alasan Pergantian')
                     ->wrap()
-                    ->limit(50),
+                    ->limit(50)
+                    ->tooltip(fn ($record): ?string => $record->alasan_pergantian),
 
                 TextColumn::make('teknisi.name')
                     ->label('Teknisi')
@@ -53,6 +54,10 @@ class SparepartsTable
                 SelectFilter::make('branch_id')
                     ->label('Filter Cabang')
                     ->relationship('branch', 'name'),
+
+                SelectFilter::make('user_id')
+                    ->label('Filter Teknisi')
+                    ->relationship('teknisi', 'name'),
             ])
             ->recordActions([
                 EditAction::make(),

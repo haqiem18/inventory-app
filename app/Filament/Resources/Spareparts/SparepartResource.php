@@ -43,13 +43,7 @@ class SparepartResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
-
-        if (Auth::user()?->role === 'teknisi' && Auth::user()?->branch_id) {
-            $query->where('branch_id', Auth::user()->branch_id);
-        }
-
-        return $query;
+        return parent::getEloquentQuery();
     }
 
     public static function form(Schema $schema): Schema

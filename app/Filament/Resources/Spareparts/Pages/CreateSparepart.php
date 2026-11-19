@@ -14,7 +14,6 @@ class CreateSparepart extends CreateRecord
     {
         if (Auth::user()?->role === 'teknisi') {
             $data['user_id'] = Auth::id();
-            $data['branch_id'] = Auth::user()->branch_id ?? $data['branch_id'];
         }
 
         return $data;

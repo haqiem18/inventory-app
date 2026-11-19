@@ -37,9 +37,6 @@ class SparepartForm
                 Select::make('branch_id')
                     ->label('Cabang')
                     ->relationship('branch', 'name')
-                    ->default(fn () => Auth::user()?->branch_id)
-                    ->disabled(fn () => Auth::user()?->role === 'teknisi' && Auth::user()?->branch_id !== null)
-                    ->dehydrated()
                     ->searchable()
                     ->preload()
                     ->required(),
