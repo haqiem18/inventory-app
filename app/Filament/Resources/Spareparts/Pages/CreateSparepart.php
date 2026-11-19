@@ -23,4 +23,23 @@ class CreateSparepart extends CreateRecord
     {
         return $this->getResource()::getUrl('index');
     }
+
+    public function getTitle(): string
+    {
+        return 'Tambah Cabang';
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction()
+                ->label('Simpan'),
+
+            $this->getCreateAnotherFormAction()
+                ->label('Simpan & Buat Lagi'),
+
+            $this->getCancelFormAction()
+                ->label('Batal'),
+        ];
+    }
 }
