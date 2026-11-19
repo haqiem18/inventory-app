@@ -57,7 +57,7 @@ class HutangResource extends Resource
             ->extraAttributes(['class' => 'shadow-sm rounded-xl overflow-hidden border border-gray-200 bg-white'])
             ->columns([
                 TextColumn::make('reference_number')->label('No. Nota')->sortable(),
-                TextColumn::make('mutation_date')->label('Tanggal')->date(),
+                TextColumn::make('mutation_date')->label('Tanggal')->date('d M Y'),
                 TextColumn::make('supplier.name')->label('Supplier'),
                 TextColumn::make('product.name')
                     ->label('Nama Barang')
