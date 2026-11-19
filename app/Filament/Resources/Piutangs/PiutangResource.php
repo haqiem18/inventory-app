@@ -44,7 +44,7 @@ class PiutangResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('reference_number')->label('No. Nota')->sortable(),
-                TextColumn::make('mutation_date')->label('Tanggal')->date(),
+                TextColumn::make('mutation_date')->label('Tanggal')->date('d M Y'),
                 TextColumn::make('customer.name')->label('Customer'),
                 TextColumn::make('product.name')
                     ->label('Nama Barang')

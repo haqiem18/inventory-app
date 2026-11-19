@@ -189,7 +189,7 @@ class StockOutResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('reference_number')->label('No. Referensi')->searchable()->sortable(),
-                TextColumn::make('mutation_date')->label('Tanggal')->date()->sortable(),
+                TextColumn::make('mutation_date')->label('Tanggal')->date('d M Y')->sortable(),
                 TextColumn::make('product.name')->label('Nama Barang')->searchable()
                     ->description(fn($record): string => "SKU: " . ($record->product->sku ?? '-')),
                 TextColumn::make('branch.name')->label('Cabang Asal'),

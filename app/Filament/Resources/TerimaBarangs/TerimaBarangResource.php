@@ -80,6 +80,7 @@ class TerimaBarangResource extends Resource
 
                 DatePicker::make('mutation_date')
                     ->label('Tanggal Keluar')
+                    ->date('d M Y')
                     ->default(now())
                     ->required(),
 
